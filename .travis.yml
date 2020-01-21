@@ -39,6 +39,7 @@ before_install:
   - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
   - cmake --build .
   - sudo cmake --build . --target install
+  - popd
 
 script:
   - mkdir build
