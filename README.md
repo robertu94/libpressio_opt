@@ -21,7 +21,7 @@ LibPressioOpt provides two new major structures on top of LibPressio:
   + `gcc-8.3.0` or later
   + `clang-9.0.0` or later
 + LibDistributed version 0.0.3 or later
-+ LibPressio version 0.29.1 or later
++ LibPressio version 0.30.0 or later
 + An MPI implementation supporting MPI-3 or later.  Tested on OpenMPI 4.0.2
 
 
