@@ -26,16 +26,19 @@ before_install:
   - sudo sh cmake.sh --skip-licence --exclude-subdir --prefix=/usr/local
   - export PATH=/usr/local/bin:$PATH
   - cmake --version
-  - git clone https://github.com/robertu94/libpressio /src/libpressio
-  - mkdir /src/libpressio/build
-  - cd /src/libpressio/build
+  - git clone https://github.com/robertu94/libpressio
+  - mkdir libpressio/build
+  - pushd libpressio/build
   - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
   - cmake --build .
-  - git clone https://github.com/robertu94/libdistributed /src/libdistributed
-  - mkdir /src/libdistributed/build
-  - cd /src/libdistributed/build
+  - sudo cmake --build . --target install
+  - popd
+  - git clone https://github.com/robertu94/libdistributed
+  - mkdir libdistributed/build
+  - pushd libdistributed/build
   - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
   - cmake --build .
+  - sudo cmake --build . --target install
 
 script:
   - mkdir build
