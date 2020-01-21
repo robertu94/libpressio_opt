@@ -1,0 +1,55 @@
+language: cpp
+dist: bionic
+matrix:
+  include:
+    - os: linux
+      env:
+        - CC=gcc-7
+        - CXX=g++-7
+    - os: linux
+      env:
+        - CC=clang
+        - CXX=clang++
+
+addons:
+  apt:
+    packages:
+      - doxygen
+      - graphviz
+      - libhdf5-dev
+      - libmagick++-dev
+      - libblosc-dev
+      - libopenmpi-dev
+
+before_install:
+  - wget -O cmake.sh https://github.com/Kitware/CMake/releases/download/v3.14.6/cmake-3.14.6-Linux-x86_64.sh
+  - sudo sh cmake.sh --skip-licence --exclude-subdir --prefix=/usr/local
+  - export PATH=/usr/local/bin:$PATH
+  - cmake --version
+  - git clone https://github.com/robertu94/libpressio /src/libpressio
+  - mkdir /src/libpressio/build
+  - cd /src/libpressio/build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+  - cmake --build .
+  - git clone https://github.com/robertu94/libdistributed /src/libdistributed
+  - mkdir /src/libdistributed/build
+  - cd /src/libdistributed/build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+  - cmake --build .
+
+script:
+  - mkdir build
+  - cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+  - cmake --build .
+  - cmake --build . --target docs
+  - ctest
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  local_dir: build/html
+  github_token: $GH_REPO_TOKEN
+  on:
+    branch: master
+    condition: $CC = clang
