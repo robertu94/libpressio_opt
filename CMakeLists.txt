@@ -25,20 +25,9 @@ endif()
 
 include(GNUInstallDirs)
 
-find_package(MPI COMPONENTS CXX)
 find_package(LibPressio REQUIRED)
-find_package(SZ REQUIRED)
-find_package(zfp REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(MGARD REQUIRED)
-find_package(fpzip REQUIRED)
 find_package(MPI REQUIRED COMPONENTS CXX)
 find_package(LibDistributed REQUIRED)
-find_package(PkgConfig)
-pkg_search_module(ZSTD IMPORTED_TARGET GLOBAL libzstd)
-pkg_search_module(FFTW3 IMPORTED_TARGET GLOBAL fftw3)
-pkg_search_module(BLOSC IMPORTED_TARGET GLOBAL blosc)
-pkg_search_module(Magick++ IMPORTED_TARGET GLOBAL Magick++)
 
 add_library(libpressio_opt
   #core features
