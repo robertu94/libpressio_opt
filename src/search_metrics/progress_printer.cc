@@ -5,12 +5,12 @@
 struct progress_printer : public pressio_search_metrics_plugin {
 
   void end_iter(pressio_search_results::input_type const& input, pressio_search_results::output_type out) override {
-    format(format(std::cout << "iter=" << iteration << ": inputs=",  input) << " output= ", out) << std::endl;
+    format(format(std::cout << iteration << ',',  input), out) << std::endl;
     iteration++;
   }
 
   void end_search(pressio_search_results::input_type const& input, pressio_search_results::output_type out) override {
-    format(format(std::cout << "final iter=" << iteration << ": inputs=",  input) << " output= ", out) << std::endl;
+    format(format(std::cout << "final iter=" << iteration << ": inputs=",  input) << " output=", out) << std::endl;
   }
 
   virtual pressio_options get_metrics_results() override {
@@ -23,7 +23,7 @@ struct progress_printer : public pressio_search_metrics_plugin {
   std::basic_ostream<CharT, Traits>&
   format(std::basic_ostream<CharT, Traits>& out, pressio_search_results::input_type const& input) {
     using element_type = pressio_search_results::input_type::value_type;
-    std::copy(std::begin(input), std::end(input), std::ostream_iterator<element_type>(out, ", "));
+    std::copy(std::begin(input), std::end(input), std::ostream_iterator<element_type>(out, ","));
     return out;
   }
   template <class CharT, class Traits>

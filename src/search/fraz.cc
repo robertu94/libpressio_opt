@@ -1,18 +1,112 @@
+#include <algorithm>
+#include <limits>
+#include "impl/GlobalOptimization.h"
 #include "pressio_search.h"
+#include "libpressio_opt_ext/impl/pressio_data_utilities.h"
 
 
 struct fraz_search: public pressio_search_plugin {
   public:
-    pressio_search_results search(std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)>) override {
+    pressio_search_results search(std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn) override {
       pressio_search_results results;
+
+      auto clamp = [](double value, double low, double high) {
+        assert(low < high);
+        if(value < low) return low;
+        if(high < value) return high;
+        return value;
+      };
+      auto loss = [&clamp](double target, double actual){
+        return clamp(pow((target-actual),2),
+            std::numeric_limits<double>::min() * 1e-10,
+            std::numeric_limits<double>::max() * 1e-10
+            );
+      };
+      auto threshold = std::min(
+          loss(target, target*(1-global_rel_tolerance)),
+          loss(target, target*(1+global_rel_tolerance))
+      );
+      auto should_stop = [threshold](double value) {
+        return value < threshold;
+      };
+      auto vector_to_dlib = [](pressio_search_results::input_type const& input) {
+        dlib::matrix<double,0,1> output(input.size());
+        std::copy(std::begin(input), std::end(input), std::begin(output));
+
+        return output;
+      };
+      auto dlib_to_vector = [](dlib::matrix<double,0,1> const& input) {
+        const pressio_search_results::input_type output(input.begin(), input.end());
+        return output;
+      };
+
+      std::map<pressio_search_results::input_type, pressio_search_results::output_type> cache;
+      auto fraz = [&loss, &cache, &dlib_to_vector, &compress_fn, this](dlib::matrix<double,0,1> const& input){
+        auto const vec = dlib_to_vector(input);
+        auto const result = compress_fn(vec);
+        cache[vec] = result;
+        return loss(target, result);
+      };
+
+      auto result = pressio_opt::find_min_global(
+          fraz,
+          vector_to_dlib(lower_bound),
+          vector_to_dlib(upper_bound),
+          pressio_opt::max_function_calls(max_iterations),
+          std::chrono::seconds(max_seconds),
+          local_tolerance,
+          pressio_opt::stop_condition(should_stop)
+          );
+
+      results.inputs = dlib_to_vector(result.x);
+      results.output = cache[results.inputs];
+      results.status = 0;
+
       return results;
     }
 
     //configuration
     virtual pressio_options get_options(pressio_options const& opt_module_settings) const override {
-      return pressio_options{};
+      pressio_options opts;
+      std::vector<std::string> inputs;
+      opt_module_settings.get("opt:inputs", &inputs);
+      
+      //need to reconfigure because input size has changed
+      if(inputs.size() != prediction.size()) {
+        opts.set("opt:prediction",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+        opts.set("opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+        opts.set("opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+      } else {
+        opts.set("opt:prediction", vector_to_owning_pressio_data(prediction));
+        opts.set("opt:lower_bound", vector_to_owning_pressio_data(lower_bound));
+        opts.set("opt:upper_bound", vector_to_owning_pressio_data(upper_bound));
+      }
+      opts.set("opt:max_iterations", max_iterations);
+      opts.set("opt:max_seconds", max_seconds);
+      opts.set("opt:global_rel_tolerance", global_rel_tolerance);
+      opts.set("opt:local_rel_tolerance", local_tolerance);
+      opts.set("opt:target", target);
+      return opts;
     }
     virtual int set_options(pressio_options const& options) override {
+      pressio_data data;
+      if(options.get("opt:prediction", &data) == pressio_options_key_set) {
+        prediction = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
+        if(prediction.size() > 1) return 1;
+      }
+      if(options.get("opt:lower_bound", &data) == pressio_options_key_set) {
+        lower_bound = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
+        if(lower_bound.size() > 1) return 1;
+      }
+      if(options.get("opt:upper_bound", &data) == pressio_options_key_set) {
+        upper_bound = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
+        if(upper_bound.size() > 1) return 1;
+      }
+      options.get("opt:max_iterations", &max_iterations);
+      options.get("opt:max_seconds", &max_seconds);
+      options.get("opt:global_rel_tolerance", &global_rel_tolerance);
+      options.get("opt:local_rel_tolerance", &local_tolerance);
+      options.get("opt:target", &target);
       return 0;
     }
     
@@ -42,6 +136,14 @@ struct fraz_search: public pressio_search_plugin {
     virtual int patch_version() const override { return 2; }
 
 private:
+    pressio_search_results::input_type prediction;
+    pressio_search_results::input_type lower_bound;
+    pressio_search_results::input_type upper_bound;
+    pressio_search_results::output_type target;
+    double local_tolerance = .01;
+    double global_rel_tolerance = .1;
+    unsigned int max_iterations = 100;
+    unsigned int max_seconds = std::numeric_limits<unsigned int>::max();
 };
 
 

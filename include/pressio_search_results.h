@@ -2,6 +2,7 @@
 #define PRESSIO_SEARCH_RESULTS_H
 
 #include <vector>
+#include <string>
 /**
  * \file
  * \brief provides the definitions used for search_results
@@ -16,9 +17,15 @@ struct pressio_search_results {
   /** type of the output_type*/
   using output_type = double;
   /** input to the best iteration*/
-  input_type inputs;
+  input_type inputs{};
   /** result of the best iteration*/
-  output_type output;
+  output_type output{};
+
+  /** status of the search, 0 on success, <0 on warning, >0 on error */
+  int status = 0;
+  /** human-readable message describing the status on warnings or error */
+  std::string msg{};
+
 };
 
 #endif /* end of include guard: PRESSIO_SEARCH_RESULTS_H */
