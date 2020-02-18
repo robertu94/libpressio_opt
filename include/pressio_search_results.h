@@ -15,11 +15,14 @@ struct pressio_search_results {
   /** type of the input_type*/
   using input_type = std::vector<double>;
   /** type of the output_type*/
-  using output_type = double;
+  using output_type = std::vector<double>;
   /** input to the best iteration*/
   input_type inputs{};
-  /** result of the best iteration*/
-  output_type output{};
+
+  /** type of the objective */
+  using objective_type = double;
+  /** mulit-objective objective */
+  objective_type objective{};
 
   /** status of the search, 0 on success, <0 on warning, >0 on error */
   int status = 0;

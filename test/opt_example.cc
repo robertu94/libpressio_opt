@@ -1,10 +1,12 @@
 #include "libpressio_opt_ext/impl/pressio_data_utilities.h"
 #include <sz/sz.h>
 #include <iostream>
+#include <limits>
 #include <libpressio.h>
 #include <libpressio_ext/io/posix.h>
 #include <libpressio_ext/cpp/libpressio.h>
 #include <libpressio_opt_ext/impl/pressio_data_utilities.h>
+#include <pressio_search_defines.h>
 
 float* make_data() {
   size_t idx = 0;
@@ -19,19 +21,28 @@ float* make_data() {
   return data;
 }
 
+
 int main(int argc, char *argv[])
 {
   pressio library;
-  std::string metrics_ids[] = {"size", "time"};
+  std::string metrics_ids[] = {"size", "time", "error_stat"};
   pressio_metrics metrics = library.get_metrics(std::begin(metrics_ids), std::end(metrics_ids));
   auto compressor = library.get_compressor("opt");
   auto configuration = compressor->get_configuration();
   compressor->set_metrics(metrics);
   std::cout << "configuration:" << std::endl << configuration << std::endl;
 
+  double psnr_threshold = 65.0;
+  std::function<double(std::vector<double>const&)> objective = [=](std::vector<double> const& results) {
+    double cr = results.at(0);
+    double psnr = results.at(1);
+    if(psnr < psnr_threshold) return std::numeric_limits<double>::lowest();
+    return cr;
+  };
+
   auto options = compressor->get_options();
-  pressio_data lower_bound = vector_to_owning_pressio_data<double>({0.0});
-  pressio_data upper_bound = vector_to_owning_pressio_data<double>({0.1});
+  pressio_data lower_bound{0.0};
+  pressio_data upper_bound{0.1};
   pressio_data guess = vector_to_owning_pressio_data<double>({1e-5});
   options.set("opt:search", "fraz"); //binary search is non-monotonic for this input using SZ_REL
   options.set("opt:compressor", "sz");
@@ -41,11 +52,15 @@ int main(int argc, char *argv[])
   options.set("opt:target", 400.0);
   options.set("opt:local_rel_tolerance", 0.1);
   options.set("opt:global_rel_tolerance", 0.1);
-  options.set("opt:max_iterations", static_cast<unsigned int>(100));
-  options.set("opt:output", "size:compression_ratio");
+  options.set("opt:max_iterations", 100u);
+  options.set("opt:output", std::vector<std::string>{"size:compression_ratio", "error_stat:psnr"});
   options.set("opt:do_decompress", 0);
   options.set("opt:search_metrics", "progress_printer");
   options.set("opt:prediction", guess);
+  options.set("opt:do_decompress", 1);
+  options.set("opt:objective_fn", (void*)pressio_opt_multiobjective_stdfn);
+  options.set("opt:objective_data", (void*)&objective);
+  options.set("opt:objective_mode", (unsigned int)pressio_search_mode_max);
   options.set("sz:error_bound_mode", REL);
   compressor->set_options(options);
   options = compressor->get_options();

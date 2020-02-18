@@ -20,6 +20,7 @@ addons:
       - libmagick++-dev
       - libblosc-dev
       - libopenmpi-dev
+      - libdlib-dev
 
 before_install:
   - wget -O cmake.sh https://github.com/Kitware/CMake/releases/download/v3.14.6/cmake-3.14.6-Linux-x86_64.sh

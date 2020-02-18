@@ -35,6 +35,7 @@ add_library(libpressio_opt
     src/pressio_opt.cc
     src/pressio_search.cc
     src/pressio_search_metrics.cc
+    src/pressio_search_defines.cc
 
     src/search/binary.cc
     src/search/fraz.cc

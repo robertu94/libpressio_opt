@@ -3,28 +3,11 @@
 #include <vector>
 #include <type_traits>
 #include <libpressio_ext/cpp/data.h>
+#include <libpressio_ext/cpp/dtype.h>
 
 /** \file 
  *  \brief functions that convert between standard types and pressio_data structures
  */
-
-namespace {
-  template <class T>
-    constexpr pressio_dtype type_to_dtype() {
-      return (std::is_same<T, double>::value ? pressio_double_dtype :
-          std::is_same<T, float>::value ? pressio_float_dtype :
-          std::is_same<T, int64_t>::value ? pressio_int64_dtype :
-          std::is_same<T, int32_t>::value ? pressio_int32_dtype :
-          std::is_same<T, int16_t>::value ? pressio_int16_dtype :
-          std::is_same<T, int8_t>::value ? pressio_int8_dtype :
-          std::is_same<T, uint64_t>::value ? pressio_uint64_dtype :
-          std::is_same<T, uint32_t>::value ? pressio_uint32_dtype :
-          std::is_same<T, uint16_t>::value ? pressio_uint16_dtype :
-          std::is_same<T, uint8_t>::value ? pressio_uint8_dtype :
-          pressio_byte_dtype
-          );
-    }
-}
 
 /**
  * converts a pressio_data structure to a std::vector of the template type
@@ -46,7 +29,7 @@ std::vector<T> pressio_data_to_vector(pressio_data const& data) {
  */
 template <class T>
 pressio_data vector_to_owning_pressio_data(std::vector<T> const& vec) {
-  return pressio_data::copy(type_to_dtype<T>(), vec.data(), {vec.size()});
+  return pressio_data::copy(pressio_dtype_from_type<T>(), vec.data(), {vec.size()});
 }
 
 

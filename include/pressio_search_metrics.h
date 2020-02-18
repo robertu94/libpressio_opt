@@ -48,7 +48,7 @@ struct pressio_search_metrics_plugin {
    * \param[in] inputs the input to this iteration
    * \param[in] out the input to this iteration
    */
-  virtual void end_iter(pressio_search_results::input_type const& inputs, pressio_search_results::output_type out){}
+  virtual void end_iter(pressio_search_results::input_type const& inputs, pressio_search_results::output_type out, pressio_search_results::objective_type objective){}
   /**
    * called at the beginning the entire search
    */
@@ -59,13 +59,19 @@ struct pressio_search_metrics_plugin {
    * \param[in] inputs input that corresponds to the best configuration
    * \param[in] out output that corresponds to the best configuration
    */
-  virtual void end_search(pressio_search_results::input_type const& inputs, pressio_search_results::output_type out){}
+  virtual void end_search(pressio_search_results::input_type const& inputs, pressio_search_results::objective_type out){}
 
   //get metrics results
   /**
    * \returns the results of the metrics if there are any
    */
   virtual pressio_options get_metrics_results()=0;
+
+  /**
+   * \returns a clone of the current search metrics object
+   */
+  virtual std::shared_ptr<pressio_search_metrics_plugin> clone()=0;
+
 };
 
 

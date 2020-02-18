@@ -11,6 +11,7 @@
 #include "pressio_search.h"
 #include "pressio_search_metrics.h"
 #include "pressio_search_exception.h"
+#include "pressio_search_defines.h"
 
 namespace {
   template <class Registry>
@@ -37,9 +38,11 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       options.set("opt:compressor", compressor_method);
       options.set("opt:search", search_method);
       options.set("opt:inputs", input_settings);
-      options.set("opt:output", output_setting);
+      options.set("opt:output", output_settings);
       options.set("opt:do_decompress", do_decompress);
       options.set("opt:search_metrics", search_metrics_method);
+      options.set("opt:objective_fn", (void*)multiobjective);
+      options.set("opt:objective_data", (void*)multiobjective_data);
       auto search_options = search->get_options(options);
       for (auto const& option : search_options) {
         options.set(option.first, option.second);
@@ -73,8 +76,11 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         search = search_plugins().build(search_method);
       }
       options.get("opt:inputs", &input_settings);
-      options.get("opt:output", &output_setting);
+      options.get("opt:output", &output_settings);
       options.get("opt:do_decompress", &do_decompress);
+      options.get("opt:objective_fn", (void**)&multiobjective);
+      options.get("opt:objective_data", (void**)&multiobjective_data);
+
       compressor->set_options(options);
       search->set_options(options);
       return 0;
@@ -83,11 +89,12 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
     int compress_impl(const pressio_data* input_data,
                       struct pressio_data* output) override
     {
-      if(output_setting.empty()) return output_required();
+      if(output_settings.empty()) return output_required();
 
+      bool run_metrics = true;
       auto metrics = get_metrics();
-      auto compress_fn = [&input_data,&metrics,&output,this](pressio_search_results::input_type const& input_v) {
-        search_metrics->begin_iter(input_v);
+      auto compress_fn = [&run_metrics, &input_data,&metrics,&output,this](pressio_search_results::input_type const& input_v) {
+        if(run_metrics) search_metrics->begin_iter(input_v);
         //configure the compressor for this input
         auto settings = compressor->get_options();
         for (int i = 0; i < input_v.size(); ++i) {
@@ -112,18 +119,27 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         }
 
         auto metrics_results = compressor->get_metrics_results();
-        double result;
-        if(metrics_results.cast(output_setting, &result, pressio_conversion_explicit) != pressio_options_key_set) {
-             throw pressio_search_exception(std::string("failed to retrieve metric: ") + output_setting);
+
+        std::vector<double> results;
+        for (auto const& output_setting : output_settings) {
+          double result;
+          if(metrics_results.cast(output_setting, &result, pressio_conversion_explicit) != pressio_options_key_set) {
+               throw pressio_search_exception(std::string("failed to retrieve metric: ") + output_setting);
+          }
+          results.push_back(result);
         }
-        search_metrics->end_iter(input_v, result);
+        double result = multiobjective(results.data(), results.size(), multiobjective_data);
+        if(run_metrics) search_metrics->end_iter(input_v, results, result);
         return result;
       };
 
       try {
         search_metrics->begin_search();
         auto results = search->search(compress_fn);
-        search_metrics->end_search(results.inputs, results.output);
+        search_metrics->end_search(results.inputs, results.objective);
+        //set metrics results to the results metrics
+        run_metrics = false;
+        compress_fn(results.inputs);
         if(results.status) return set_error(results.status, results.msg);
         return 0;
       } catch(pressio_search_exception const& e) {
@@ -154,6 +170,21 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       return "opt";
     }
 
+    std::shared_ptr<libpressio_compressor_plugin> clone() override {
+      auto tmp = compat::make_unique<pressio_opt_plugin>();
+      tmp->library = library;
+      tmp->compressor = compressor->clone();
+      tmp->search = search->clone();
+      tmp->search_metrics = search_metrics->clone();
+      tmp->compressor_method = compressor_method;
+      tmp->input_settings = input_settings;
+      tmp->output_settings = output_settings;
+      tmp->do_decompress = do_decompress;
+      tmp->multiobjective = multiobjective;
+      tmp->multiobjective_data = multiobjective_data;
+      return tmp;
+    }
+
 
 
   private:
@@ -170,7 +201,9 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
     std::string search_method="guess";
     std::string search_metrics_method="progress_printer";
     std::vector<std::string> input_settings{};
-    std::string output_setting;
+    std::vector<std::string> output_settings;
+    pressio_opt_multiobjective_fn multiobjective = pressio_opt_multiobjective_first;
+    void* multiobjective_data;
     int do_decompress = 1;
 };
 

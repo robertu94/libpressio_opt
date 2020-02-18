@@ -6,7 +6,7 @@
 
 struct binary_search: public pressio_search_plugin {
   public:
-    pressio_search_results search(std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn) override {
+    pressio_search_results search(std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn) override {
       pressio_search_results results;
       size_t iter = 2;
       auto lower = lower_bound.front();
@@ -57,7 +57,7 @@ struct binary_search: public pressio_search_plugin {
         results.msg = "time-limit exceeded";
       }
       results.inputs = {current};
-      results.output = result;
+      results.objective = result;
 
       return results;
     }
@@ -133,11 +133,15 @@ struct binary_search: public pressio_search_plugin {
      */
     virtual int patch_version() const override { return 2; }
 
+    std::shared_ptr<pressio_search_plugin> clone() override {
+      return compat::make_unique<binary_search>(*this);
+    }
+
 private:
     pressio_search_results::input_type prediction;
     pressio_search_results::input_type lower_bound;
     pressio_search_results::input_type upper_bound;
-    pressio_search_results::output_type target;
+    pressio_search_results::objective_type target;
     double global_rel_tolerance;
     unsigned int max_iterations;
     unsigned int max_seconds;

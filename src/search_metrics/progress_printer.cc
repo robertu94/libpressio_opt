@@ -4,12 +4,16 @@
 
 struct progress_printer : public pressio_search_metrics_plugin {
 
-  void end_iter(pressio_search_results::input_type const& input, pressio_search_results::output_type out) override {
-    format(format(std::cout << iteration << ',',  input), out) << std::endl;
+  void begin_search() override {
+    iteration = 0;
+  }
+
+  void end_iter(pressio_search_results::input_type const& input, pressio_search_results::output_type out, pressio_search_results::objective_type objective) override {
+    format(format(std::cout << iteration << ',',  input), out) << objective << std::endl;
     iteration++;
   }
 
-  void end_search(pressio_search_results::input_type const& input, pressio_search_results::output_type out) override {
+  void end_search(pressio_search_results::input_type const& input, pressio_search_results::objective_type out) override {
     format(format(std::cout << "final iter=" << iteration << ": inputs=",  input) << " output=", out) << std::endl;
   }
 
@@ -17,6 +21,9 @@ struct progress_printer : public pressio_search_metrics_plugin {
     return pressio_options();
   }
 
+  std::shared_ptr<pressio_search_metrics_plugin> clone() override {
+    return compat::make_unique<progress_printer>(*this);
+  }
 
   private:
   template <class CharT, class Traits>
@@ -28,7 +35,7 @@ struct progress_printer : public pressio_search_metrics_plugin {
   }
   template <class CharT, class Traits>
   std::basic_ostream<CharT, Traits>&
-  format(std::basic_ostream<CharT, Traits>& out, pressio_search_results::output_type const& output) {
+  format(std::basic_ostream<CharT, Traits>& out, pressio_search_results::objective_type const& output) {
     return out << output;
   }
 

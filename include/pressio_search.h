@@ -28,7 +28,7 @@ struct pressio_search_plugin {
      * \returns a structure that summarizes the "best-configuration" found as determined by the module
      * \see pressio_search_metrics
      */
-    virtual pressio_search_results search(std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn)=0;
+    virtual pressio_search_results search(std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn)=0;
 
     //configuration
     /**
@@ -78,6 +78,11 @@ struct pressio_search_plugin {
      * \see pressio_compressor_patch_version for the semantics this function should obey
      */
     virtual int patch_version() const { return 0; }
+
+    /**
+     * \returns a clone of the current search object
+     */
+    virtual std::shared_ptr<pressio_search_plugin> clone()=0;
 
 private:
 };
