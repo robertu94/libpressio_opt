@@ -20,7 +20,6 @@ addons:
       - libmagick++-dev
       - libblosc-dev
       - libopenmpi-dev
-      - libdlib-dev
       - ctags
 
 before_install:
@@ -38,13 +37,20 @@ before_install:
   - git clone https://github.com/robertu94/libpressio
   - mkdir libpressio/build
   - pushd libpressio/build
-  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DLIBPRESSIO_HAS_SZ=ON
   - cmake --build .
   - sudo cmake --build . --target install
   - popd
   - git clone https://github.com/robertu94/libdistributed
   - mkdir libdistributed/build
   - pushd libdistributed/build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+  - cmake --build .
+  - sudo cmake --build . --target install
+  - popd
+  - git clone https://github.com/davisking/dlib
+  - mkdir dlib/build
+  - pushd dlib/build
   - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
   - cmake --build .
   - sudo cmake --build . --target install
