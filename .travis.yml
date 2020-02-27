@@ -27,6 +27,13 @@ before_install:
   - sudo sh cmake.sh --skip-licence --exclude-subdir --prefix=/usr/local
   - export PATH=/usr/local/bin:$PATH
   - cmake --version
+  - git clone https://github.com/disheng222/SZ
+  - mkdir SZ/build
+  - pushd SZ/build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+  - cmake --build .
+  - sudo cmake --build . --target install
+  - popd
   - git clone https://github.com/robertu94/libpressio
   - mkdir libpressio/build
   - pushd libpressio/build
