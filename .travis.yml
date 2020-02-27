@@ -52,7 +52,7 @@ before_install:
   - git clone https://github.com/davisking/dlib
   - mkdir dlib/build
   - pushd dlib/build
-  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON
   - cmake --build .
   - sudo cmake --build . --target install
   - popd
