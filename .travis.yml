@@ -20,6 +20,7 @@ addons:
       - libmagick++-dev
       - libblosc-dev
       - libopenmpi-dev
+      - libzstd-dev
       - ctags
 
 before_install:
