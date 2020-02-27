@@ -56,7 +56,6 @@ struct dist_gridsearch_search: public pressio_search_plugin {
             auto const& actual = std::get<0>(response);
             auto const& status = std::get<1>(response);
             auto const& inputs = std::get<2>(response);
-            std::cout << "master got " << std::get<0>(response) << std::endl;
             if(status == 0) {
               switch(mode){
                 case pressio_search_mode_max:
@@ -178,21 +177,49 @@ private:
       //for now just build the task list based on the first element.
       //we need improvements to LibDistributed before we can do more than this
       //in a general way.
-      auto lower = lower_bound.front();
-      auto upper = upper_bound.front();
-      auto bins = num_bins.front();
-      double step = (upper-lower)/static_cast<double>(bins);
+      std::vector<double> step(lower_bound.size());
+      std::vector<double> overlap(lower_bound.size());
+      for (size_t dim = 0; dim < lower_bound.size(); ++dim) {
+        step[dim] = (upper_bound[dim] - lower_bound[dim]) / static_cast<double>(num_bins[dim]);
+        overlap[dim] = overlap_percentage[dim] * step[dim];
+      }
 
       //be sure to include overlap_percentage % overlap between the bins
       //to ensure sufficient stationary points at the end point
-      double overlap = overlap_percentage.front() * step;
-      for (size_t i = 0; i < bins; ++i) {
-        std::vector<double> grid_lower = {std::max(lower, lower + step*i - overlap)};
-        std::vector<double> grid_upper = {std::min(upper, lower + step*static_cast<double>(i+1) + overlap)};
+
+      std::vector<size_t> bin(lower_bound.size(), 0);
+      bool done = false;
+      size_t idx = 0;
+      size_t configs = 0;
+      int rank;
+      while(!done) {
+
+        std::vector<double> grid_lower(lower_bound.size());
+        std::vector<double> grid_upper(lower_bound.size());
+        for (size_t dim = 0; dim < lower_bound.size(); ++dim) {
+          grid_lower[dim] = std::max(lower_bound[dim], lower_bound[dim] + step[dim] * bin[dim] - overlap[dim]);
+          grid_upper[dim] = std::min(upper_bound[dim], lower_bound[dim] + step[dim] * static_cast<double>(bin[dim] + 1) + overlap[dim]);
+        }
         tasks.emplace_back(
             grid_lower,
             grid_upper
         );
+
+        bool updating = true;
+        while(updating) {
+          ++bin[idx];
+          if(bin[idx] == num_bins[idx]) {
+            bin[idx] = 0;
+            idx++;
+            if(idx == num_bins.size()) {
+              done = true;
+            }
+            updating = true;
+          } else {
+            updating = false;
+          }
+        }
+        idx = 0;
       }
       return tasks;
     }
@@ -211,4 +238,3 @@ private:
 
 
 static pressio_register X(search_plugins(), "dist_gridsearch", [](){ return compat::make_unique<dist_gridsearch_search>();});
-
