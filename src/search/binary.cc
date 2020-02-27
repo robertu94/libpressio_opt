@@ -6,7 +6,10 @@
 
 struct binary_search: public pressio_search_plugin {
   public:
-    pressio_search_results search(std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn) override {
+    pressio_search_results search(
+        std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn,
+        distributed::queue::StopToken& token
+        ) override {
       pressio_search_results results;
       size_t iter = 2;
       auto lower = lower_bound.front();
@@ -22,13 +25,17 @@ struct binary_search: public pressio_search_plugin {
         return  (lower_value && *lower_value > result) || //check for non-monotonicity on the lower bound
                 (upper_value && *upper_value < result); //check for non-monotonicity on the upper bound
       };
+      auto check_global_tolerance = [&]{
+        return ((1.0-global_rel_tolerance)*target <= result && result <= (1.0+global_rel_tolerance)*target);
+      };
       auto is_done = [&](){
         return 
-          ((1-global_rel_tolerance)*target <= result && result <= (1+global_rel_tolerance)*target) || //check global tolerance
+          check_global_tolerance() || //check global tolerance
           (iter > max_iterations) || //exceeded maximum iterations
           (max_seconds > 0 && (last_time = std::chrono::system_clock::now()) > max_time) || //check for time exceeded
           (lower > upper) || //check for floating point rounding errors
-          is_nonmonotonic() //check for non-monotonic results, violation of assumptions
+          is_nonmonotonic() || //check for non-monotonic results, violation of assumptions
+          token.stop_requested()
           ;
       };
       while(not is_done()) {
@@ -43,6 +50,9 @@ struct binary_search: public pressio_search_plugin {
         current = (upper-lower)/2.0 + lower;
         result = compress_fn({current});
         ++iter;
+      }
+      if(check_global_tolerance()) {
+        token.request_stop();
       }
       if(is_nonmonotonic()) {
         results.status = 1;

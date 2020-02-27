@@ -17,27 +17,34 @@ struct dist_gridsearch_search: public pressio_search_plugin {
       search_method = search_plugins().build(search_method_str);
     }
 
-    pressio_search_results search(std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn) override {
-      pressio_search_results results;
+    pressio_search_results search(
+        std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn,
+        distributed::queue::StopToken& stop_token
+        ) override {
+      pressio_search_results best_results;
       switch(mode){
         case pressio_search_mode_max:
-          results.objective = std::numeric_limits<pressio_search_results::objective_type>::lowest();
+          best_results.objective = std::numeric_limits<
+            pressio_search_results::objective_type>::lowest();
           break;
         case pressio_search_mode_min:
-          results.objective = std::numeric_limits<pressio_search_results::objective_type>::max();
+          best_results.objective =
+            std::numeric_limits<pressio_search_results::objective_type>::max();
           break;
         case pressio_search_mode_target:
-          results.objective =
+          best_results.objective =
             std::numeric_limits<pressio_search_results::objective_type>::max();
           break;
       }
 
       auto tasks = build_task_list();
 
-      distributed::queue::work_queue(
-          parent_comm,
-          std::begin(tasks), std::end(tasks),
-          [this, compress_fn](task_request_t const& task) {
+      distributed::queue::
+        work_queue(
+          parent_comm, std::begin(tasks), std::end(tasks),
+          [this, compress_fn](
+            task_request_t const& task,
+            distributed::queue::TaskManager<task_request_t>& task_manager) {
             //set lower and upper bounds
             auto grid_lower = lower_bound;
             auto grid_upper = upper_bound;
@@ -49,32 +56,40 @@ struct dist_gridsearch_search: public pressio_search_plugin {
             options.set("opt:upper_bound", vector_to_owning_pressio_data(grid_upper));
             search_method->set_options(options);
 
-            auto grid_result = search_method->search(compress_fn);
+            auto grid_result = search_method->search(compress_fn, task_manager);
             return task_response_t{grid_result.objective, grid_result.status, grid_result.inputs};
           },
-          [this, &results](task_response_t response) {
+          [this, &best_results,&stop_token](task_response_t response,
+            distributed::queue::TaskManager<task_request_t>& task_manager
+            ) {
             auto const& actual = std::get<0>(response);
             auto const& status = std::get<1>(response);
             auto const& inputs = std::get<2>(response);
             if(status == 0) {
               switch(mode){
                 case pressio_search_mode_max:
-                  results.objective = std::max(results.objective, actual);
-                  results.inputs = inputs;
+                  best_results.objective = std::max(best_results.objective, actual);
+                  best_results.inputs = inputs;
+                  break;
                 case pressio_search_mode_min:
-                  results.objective = std::min(results.objective, actual);
-                  results.inputs = inputs;
+                  best_results.objective = std::min(best_results.objective, actual);
+                  best_results.inputs = inputs;
+                  break;
                 case pressio_search_mode_target:
-                  if(loss(target, actual) < loss(target, results.objective)) {
-                    results.objective = actual;
-                    results.inputs = inputs;
+                  if (loss(target, actual) < loss(target, best_results.objective)) {
+                    best_results.objective = actual;
+                    best_results.inputs = inputs;
+                    if(loss(target, actual) < loss(target*(1.0+global_rel_tolerance), actual) ||
+                       loss(target, actual) < loss(target*(1.0-global_rel_tolerance), actual)) {
+                      stop_token.request_stop();
+                      task_manager.request_stop();
+                    }
                   }
+                  break;
               }
             }
-
-          }
-          );
-      return results;
+          });
+      return best_results;
     }
 
     //configuration
@@ -172,6 +187,7 @@ private:
     using task_request_t = std::tuple<std::vector<double>, std::vector<double>>; //<0>=lower_bound, <1>=upper_bound
     using task_response_t  = std::tuple<double, int, std::vector<double>>; //<0> multi-objective <1> status <2> best_input
 
+
     std::vector<task_request_t> build_task_list() {
       std::vector<task_request_t> tasks;
       //for now just build the task list based on the first element.
@@ -234,6 +250,7 @@ private:
     MPI_Comm parent_comm = MPI_COMM_WORLD;
     unsigned int mode = pressio_search_mode_target;
     pressio_search_results::objective_type target;
+    double global_rel_tolerance = .1;
 };
 
 

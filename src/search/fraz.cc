@@ -32,7 +32,10 @@ namespace {
 
 struct fraz_search: public pressio_search_plugin {
   public:
-    pressio_search_results search(std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn) override {
+    pressio_search_results search(
+        std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn,
+        distributed::queue::StopToken& token
+        ) override {
       pressio_search_results results;
       dlib::function_evaluation best_result;
       std::map<pressio_search_results::input_type, pressio_search_results::objective_type> cache;
@@ -44,8 +47,8 @@ struct fraz_search: public pressio_search_plugin {
                 loss(target, target*(1-global_rel_tolerance)),
                 loss(target, target*(1+global_rel_tolerance))
             );
-            auto should_stop = [threshold](double value) {
-              return value < threshold;
+            auto should_stop = [threshold,&token](double value) {
+              return value < threshold || token.stop_requested();
             };
 
             auto fraz = [&cache, &compress_fn, this](dlib::matrix<double,0,1> const& input){
@@ -78,8 +81,8 @@ struct fraz_search: public pressio_search_plugin {
                 std::numeric_limits<double>::max() * 1e-10
               );
             };
-            auto should_stop = [](double value) {
-              return false;
+            auto should_stop = [&token](double value) {
+              return token.stop_requested();
             };
             if(mode == pressio_search_mode_min) {
             best_result = pressio_opt::find_min_global(

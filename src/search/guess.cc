@@ -4,7 +4,10 @@
 
 struct guess_search: public pressio_search_plugin {
   public:
-    pressio_search_results search(std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn) override {
+    pressio_search_results search(
+        std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn,
+        distributed::queue::StopToken&
+        ) override {
       pressio_search_results results{};
       results.inputs = input;
       results.objective = compress_fn(input);

@@ -23,6 +23,18 @@ namespace {
     return names;
 }
 
+class OptStopToken: public distributed::queue::StopToken {
+  bool stop_requested() {
+    return should_stop;
+  }
+
+  void request_stop() {
+    should_stop = true;
+  }
+
+  bool should_stop = false;
+};
+
 }
 
 class pressio_opt_plugin: public libpressio_compressor_plugin {
@@ -137,8 +149,9 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       };
 
       try {
+        OptStopToken token;
         search_metrics->begin_search();
-        auto results = search->search(compress_fn);
+        auto results = search->search(compress_fn, token);
         search_metrics->end_search(results.inputs, results.objective);
         //set metrics results to the results metrics
         run_metrics = false;

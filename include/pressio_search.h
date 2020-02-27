@@ -2,6 +2,7 @@
 #include <vector>
 #include <libpressio_ext/cpp/pressio.h>
 #include <libpressio_ext/cpp/options.h>
+#include <libdistributed_task_manager.h>
 #include "pressio_search_results.h"
 
 /**
@@ -28,7 +29,10 @@ struct pressio_search_plugin {
      * \returns a structure that summarizes the "best-configuration" found as determined by the module
      * \see pressio_search_metrics
      */
-    virtual pressio_search_results search(std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn)=0;
+    virtual pressio_search_results search(
+        std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn,
+        distributed::queue::StopToken& stop_token
+        )=0;
 
     //configuration
     /**
