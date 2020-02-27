@@ -40,6 +40,7 @@ add_library(libpressio_opt
     src/search/binary.cc
     src/search/fraz.cc
     src/search/guess.cc
+    src/search/dist_grid.cc
 
     src/search_metrics/progress_printer.cc
   #public headers

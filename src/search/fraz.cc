@@ -145,11 +145,9 @@ struct fraz_search: public pressio_search_plugin {
       }
       if(options.get("opt:lower_bound", &data) == pressio_options_key_set) {
         lower_bound = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
-        if(lower_bound.size() > 1) return 1;
       }
       if(options.get("opt:upper_bound", &data) == pressio_options_key_set) {
         upper_bound = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
-        if(upper_bound.size() > 1) return 1;
       }
       options.get("opt:max_iterations", &max_iterations);
       options.get("opt:max_seconds", &max_seconds);

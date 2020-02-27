@@ -74,6 +74,9 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       }
       if(options.get("opt:search", &search_method) == pressio_options_key_set) {
         search = search_plugins().build(search_method);
+        if(!search) {
+          return invalid_search_plugin(search_method);
+        }
       }
       options.get("opt:inputs", &input_settings);
       options.get("opt:output", &output_settings);
@@ -190,6 +193,9 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
   private:
     int output_required() {
       return set_error(1, "opt:output is required to be set, but is not");
+    }
+    int invalid_search_plugin(std::string const& name) {
+      return set_error(2, name + " unknown search plugin");
     }
 
     pressio library{};
