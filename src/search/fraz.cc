@@ -39,6 +39,7 @@ struct fraz_search: public pressio_search_plugin {
       pressio_search_results results;
       dlib::function_evaluation best_result;
       std::map<pressio_search_results::input_type, pressio_search_results::objective_type> cache;
+      dlib::thread_pool pool((thread_safe) ? (nthreads): (1));
 
       switch(mode) {
         case pressio_search_mode_target:
@@ -59,6 +60,7 @@ struct fraz_search: public pressio_search_plugin {
             };
 
             best_result = pressio_opt::find_min_global(
+                pool,
                 fraz,
                 vector_to_dlib(lower_bound),
                 vector_to_dlib(upper_bound),
@@ -86,6 +88,7 @@ struct fraz_search: public pressio_search_plugin {
             };
             if(mode == pressio_search_mode_min) {
             best_result = pressio_opt::find_min_global(
+                pool,
                 fraz,
                 vector_to_dlib(lower_bound),
                 vector_to_dlib(upper_bound),
@@ -96,6 +99,7 @@ struct fraz_search: public pressio_search_plugin {
                 );
             } else {
             best_result = pressio_opt::find_max_global(
+                pool,
                 fraz,
                 vector_to_dlib(lower_bound),
                 vector_to_dlib(upper_bound),
@@ -138,6 +142,7 @@ struct fraz_search: public pressio_search_plugin {
       opts.set("opt:local_rel_tolerance", local_tolerance);
       opts.set("opt:target", target);
       opts.set("opt:objective_mode", mode);
+      opts.set("fraz:nthreads", nthreads);
       return opts;
     }
     int set_options(pressio_options const& options) override {
@@ -158,6 +163,8 @@ struct fraz_search: public pressio_search_plugin {
       options.get("opt:local_rel_tolerance", &local_tolerance);
       options.get("opt:target", &target);
       options.get("opt:objective_mode", &mode);
+      options.get("opt:thread_safe", &thread_safe);
+      options.get("fraz:nthreads", &nthreads);
       return 0;
     }
     
@@ -200,6 +207,8 @@ private:
     unsigned int max_iterations = 100;
     unsigned int max_seconds = std::numeric_limits<unsigned int>::max();
     unsigned int mode = pressio_search_mode_target;
+    unsigned int nthreads = 1;
+    int thread_safe = 0;
 };
 
 

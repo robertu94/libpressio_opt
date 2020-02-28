@@ -14,7 +14,8 @@ float* make_data() {
   for (int i = 0; i < 500; ++i) {
     for (int j = 0; j < 500; ++j) {
       for (int k = 0; k < 100; ++k) {
-        data[++idx] = i*i + 2*j - k;
+        data[idx] = i*i + 2*j - k;
+        idx++;
       }
     }
   }
@@ -24,9 +25,16 @@ float* make_data() {
 
 int main(int argc, char *argv[])
 {
-  int rank, size;
-  MPI_Init(&argc, &argv);
+  int rank, size, thread_provided;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &thread_provided);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(thread_provided != MPI_THREAD_MULTIPLE) {
+    if(rank == 0){
+      std::cout << "insufficient thread support from MPI" << std::endl;
+    }
+    MPI_Abort(MPI_COMM_WORLD, 3);
+  }
+
 
   pressio library;
   std::string metrics_ids[] = {"size", "time", "error_stat"};
@@ -52,6 +60,9 @@ int main(int argc, char *argv[])
   pressio_data guess = vector_to_owning_pressio_data<double>({1e-5});
   options.set("opt:search", "dist_gridsearch"); //binary search is non-monotonic for this input using SZ_REL
   options.set("dist_gridsearch:search", "fraz"); //binary search is non-monotonic for this input using SZ_REL
+  options.set("dist_gridsearch:num_bins", pressio_data{5ul,});
+  options.set("dist_gridsearch:overlap_percentage", pressio_data{.1,});
+  options.set("fraz:nthreads", 4u);
   options.set("opt:compressor", "sz");
   options.set("opt:inputs", std::vector<std::string>{"sz:rel_err_bound"});
   options.set("opt:lower_bound", lower_bound);
@@ -69,8 +80,6 @@ int main(int argc, char *argv[])
   options.set("opt:objective_data", (void*)&objective);
   options.set("opt:objective_mode", (unsigned int)pressio_search_mode_max);
   options.set("sz:error_bound_mode", REL);
-  options.set("dist_gridsearch:num_bins", pressio_data{5ul,});
-  options.set("dist_gridsearch:overlap_percentage", pressio_data{.1,});
   if(compressor->set_options(options)) {
     std::cout << compressor->error_msg() << std::endl;
     exit(compressor->error_code());

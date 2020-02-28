@@ -1,6 +1,9 @@
 #include <algorithm>
 #include <sstream>
 #include <iterator>
+#include <mutex>
+#include <condition_variable>
+#include <mpi.h>
 #include "pressio_compressor.h"
 #include "libpressio_ext/cpp/pressio.h"
 #include "libpressio_ext/cpp/data.h"
@@ -34,7 +37,6 @@ class OptStopToken: public distributed::queue::StopToken {
 
   bool should_stop = false;
 };
-
 }
 
 class pressio_opt_plugin: public libpressio_compressor_plugin {
@@ -98,6 +100,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
 
       compressor->set_options(options);
       search->set_options(options);
+      search->set_options({{"opt:thread_safe", is_thread_safe()}});
       return 0;
     }
 
@@ -108,8 +111,55 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
 
       bool run_metrics = true;
       auto metrics = get_metrics();
-      auto compress_fn = [&run_metrics, &input_data,&metrics,&output,this](pressio_search_results::input_type const& input_v) {
+      compressor->set_metrics(metrics);
+
+      auto compress_thread_fn = [&run_metrics, &input_data,&output,this](pressio_search_results::input_type const& input_v) {
         if(run_metrics) search_metrics->begin_iter(input_v);
+
+        auto thread_compressor = compressor->clone();
+        auto thread_output = pressio_data::clone(*output);
+
+        //configure the compressor for this input
+        auto settings = thread_compressor->get_options();
+        for (int i = 0; i < input_v.size(); ++i) {
+           if(settings.cast_set(input_settings[i], input_v[i], pressio_conversion_explicit) != pressio_options_key_set) {
+             throw pressio_search_exception(std::string("failed to configure setting: ") + input_settings[i]);
+           }
+        }
+        if(thread_compressor->set_options(settings)) {
+             throw pressio_search_exception(std::string("failed to configure compressor: ") + thread_compressor->error_msg());
+        }
+
+        pressio_data decompressed;
+        if(thread_compressor->compress(input_data, &thread_output)) {
+             throw pressio_search_exception(std::string("failed to compress data: ") + thread_compressor->error_msg());
+        }
+        if(do_decompress) {
+          decompressed = pressio_data::owning(input_data->dtype(), input_data->dimensions());
+          if(thread_compressor->decompress(&thread_output, &decompressed)) {
+             throw pressio_search_exception(std::string("failed to decompress data: ") + thread_compressor->error_msg());
+          }
+        }
+
+        auto metrics_results = thread_compressor->get_metrics_results();
+
+        std::vector<double> results;
+        for (auto const& output_setting : output_settings) {
+          double result;
+          if(metrics_results.cast(output_setting, &result, pressio_conversion_explicit) != pressio_options_key_set) {
+               throw pressio_search_exception(std::string("failed to retrieve metric: ") + output_setting);
+          }
+          results.push_back(result);
+        }
+        double result = multiobjective(results.data(), results.size(), multiobjective_data);
+        if(run_metrics) search_metrics->end_iter(input_v, results, result);
+        return result;
+      };
+
+      auto compress_fn = [&run_metrics, &input_data,&output,this](pressio_search_results::input_type const& input_v) {
+        if(run_metrics) search_metrics->begin_iter(input_v);
+
+
         //configure the compressor for this input
         auto settings = compressor->get_options();
         for (int i = 0; i < input_v.size(); ++i) {
@@ -120,7 +170,6 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         if(compressor->set_options(settings)) {
              throw pressio_search_exception(std::string("failed to configure compressor: ") + compressor->error_msg());
         }
-        compressor->set_metrics(metrics);
 
         pressio_data decompressed;
         if(compressor->compress(input_data, output)) {
@@ -151,7 +200,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       try {
         OptStopToken token;
         search_metrics->begin_search();
-        auto results = search->search(compress_fn, token);
+        auto results = search->search(compress_thread_fn, token);
         search_metrics->end_search(results.inputs, results.objective);
         //set metrics results to the results metrics
         run_metrics = false;
@@ -189,10 +238,14 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
     std::shared_ptr<libpressio_compressor_plugin> clone() override {
       auto tmp = compat::make_unique<pressio_opt_plugin>();
       tmp->library = library;
+
       tmp->compressor = compressor->clone();
-      tmp->search = search->clone();
-      tmp->search_metrics = search_metrics->clone();
       tmp->compressor_method = compressor_method;
+
+      tmp->search = search->clone();
+      tmp->search_method = search_method;
+      tmp->search_metrics = search_metrics->clone();
+
       tmp->input_settings = input_settings;
       tmp->output_settings = output_settings;
       tmp->do_decompress = do_decompress;
@@ -204,6 +257,21 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
 
 
   private:
+    int is_thread_safe() const {
+      int mpi_init=0;
+      MPI_Initialized(&mpi_init);
+
+      int compressor_thread_safety=0;
+      compressor->get_configuration().get("pressio:thread_safe", &compressor_thread_safety);
+
+      if(mpi_init) {
+        int mpi_thread_provided;
+        MPI_Query_thread(&mpi_thread_provided);
+        return compressor_thread_safety == pressio_thread_safety_multiple && mpi_thread_provided == MPI_THREAD_MULTIPLE;
+      } else {
+        return compressor_thread_safety == pressio_thread_safety_multiple;
+      }
+    }
     int output_required() {
       return set_error(1, "opt:output is required to be set, but is not");
     }

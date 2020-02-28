@@ -229,8 +229,10 @@ private:
             idx++;
             if(idx == num_bins.size()) {
               done = true;
+              updating = false;
+            } else {
+              updating = true;
             }
-            updating = true;
           } else {
             updating = false;
           }
