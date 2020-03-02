@@ -48,8 +48,8 @@ struct dist_gridsearch_search: public pressio_search_plugin {
             //set lower and upper bounds
             auto grid_lower = lower_bound;
             auto grid_upper = upper_bound;
-            grid_lower.front() = std::get<0>(task).front();
-            grid_upper.front() = std::get<1>(task).front();
+            grid_lower = std::get<0>(task);
+            grid_upper = std::get<1>(task);
 
             pressio_options options;
             options.set("opt:lower_bound", vector_to_owning_pressio_data(grid_lower));

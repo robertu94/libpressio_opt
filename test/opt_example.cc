@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
   options.set("dist_gridsearch:search", "fraz"); //binary search is non-monotonic for this input using SZ_REL
   options.set("dist_gridsearch:num_bins", pressio_data{5ul,});
   options.set("dist_gridsearch:overlap_percentage", pressio_data{.1,});
+  options.set("dist_gridsearch:comm", (void*)MPI_COMM_WORLD);
   options.set("fraz:nthreads", 4u);
   options.set("opt:compressor", "sz");
   options.set("opt:inputs", std::vector<std::string>{"sz:rel_err_bound"});

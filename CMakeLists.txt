@@ -41,6 +41,7 @@ add_library(libpressio_opt
     src/search/fraz.cc
     src/search/guess.cc
     src/search/dist_grid.cc
+    src/search/nrt.cc
 
     src/search_metrics/progress_printer.cc
   #public headers
