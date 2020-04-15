@@ -1,0 +1,4 @@
+.spack-env/
+spack.lock
+build
+
