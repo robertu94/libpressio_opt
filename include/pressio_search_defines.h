@@ -3,38 +3,11 @@ extern "C" {
 #endif
 #ifndef PRESSIO_SEARCH_DEFINES_H
 #define PRESSIO_SEARCH_DEFINES_H
-#include <stddef.h>
 
-/**
- * Callback to compute the objective from multiple objectives
- *
- * \param[in] data the objectives computed
- * \param[in] size the number of objectives passed
- * \param[in] user_data auxiliary constants provided by the user may include constraints, etc...
- * \returns the computed objective
+/** \file
+ *  \brief definitions of constants needed to interact with libpressio_opt from C
  */
-typedef double (*pressio_opt_multiobjective_fn)(const double* data, const size_t size, const void* user_data) ;
 
-/**
- * Standard call that invokes a std::function<double(std::vector<double> const&)>
- *
- * \param[in] data the objectives computed
- * \param[in] size the number of objectives passed
- * \param[in] stdfn pointer to a std::function<double(std::vector<double> const&)>
-
- * \returns the computed objective
- */
-double pressio_opt_multiobjective_stdfn(const double* data,  const size_t size, const void* stdfn);
-/**
- * Standard call that returns the first element from data allowing single objective optimization 
- * to be treated the same way as multi-objective optimization
- *
- * \param[in] data the objectives computed
- * \param[in] size the number of objectives passed
- * \param[in] ignored not used by this method
- * \returns the first element from data
- */
-double pressio_opt_multiobjective_first(const double* data,  const size_t size, const void* ignored);
 
 /**
  * describes different methodologies for searching

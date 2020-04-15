@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libpressio_opt VERSION "0.0.3" LANGUAGES C CXX)
+project(libpressio_opt VERSION "0.1.0" LANGUAGES C CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/
@@ -29,13 +29,14 @@ find_package(LibPressio REQUIRED)
 find_package(MPI REQUIRED COMPONENTS CXX)
 find_package(LibDistributed REQUIRED)
 find_package(dlib REQUIRED)
+find_package(PkgConfig)
+find_package(Threads)
 
 add_library(libpressio_opt
   #core features
     src/pressio_opt.cc
     src/pressio_search.cc
     src/pressio_search_metrics.cc
-    src/pressio_search_defines.cc
 
     src/search/binary.cc
     src/search/fraz.cc
@@ -55,7 +56,7 @@ target_include_directories(
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libpressio_opt>
   )
 target_link_libraries(libpressio_opt PUBLIC LibDistributed::libdistributed
-  LibPressio::libpressio PRIVATE dlib::dlib)
+  LibPressio::libpressio PRIVATE dlib::dlib )
 target_compile_features(libpressio_opt PUBLIC cxx_std_${LIBPRESSIO_OPT_CXX_VERSION})
 
 option(USE_CLANG_TIDY "include clang-tidy warnings in the build log" OFF)

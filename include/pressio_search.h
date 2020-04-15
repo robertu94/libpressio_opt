@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <functional>
 #include <vector>
 #include <libpressio_ext/cpp/pressio.h>
@@ -10,10 +11,15 @@
  * \brief interface for search modules
  */
 
+
+class pressio_search_exception : public std::runtime_error {
+  using runtime_error::runtime_error;
+};
+
 /**
  * base class for search plugins
  */
-struct pressio_search_plugin {
+struct pressio_search_plugin : public pressio_versionable, public pressio_configurable {
   public:
     /** destructor */
     virtual ~pressio_search_plugin()=default;
@@ -30,7 +36,7 @@ struct pressio_search_plugin {
      * \see pressio_search_metrics
      */
     virtual pressio_search_results search(
-        std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn,
+        std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
         distributed::queue::StopToken& stop_token
         )=0;
 
@@ -45,43 +51,6 @@ struct pressio_search_plugin {
      * \returns the options for this search module
      */
     virtual pressio_options get_options(pressio_options const& opt_module_settings) const=0;
-    /** apply the options passed the search module 
-     * \param[in] options the configuration to apply
-     * \returns 0 if there was no error, non zero if there was a error
-     * */
-    virtual int set_options(pressio_options const& options)=0;
-    /**
-     * get the compile-time settings of the search module 
-     *
-     * \returns the options for this search module
-     */
-    virtual pressio_options get_configuration() const { return pressio_options(); }
-    /** validate the options passed the search module 
-     * \param[in] options the configuration to check
-     * \returns 0 if there was no error, non zero if there was a error
-     * */
-    virtual int check_options(pressio_options const& options) const {return 0;}
-
-    //meta-data
-    /** get the prefix used by this compressor for options */
-    virtual const char* prefix() const=0;
-
-    /** get a version string for the compressor
-     * \see pressio_compressor_version for the semantics this function should obey
-     */
-    virtual const char* version() const=0;
-    /** get the major version, default version returns 0
-     * \see pressio_compressor_major_version for the semantics this function should obey
-     */
-    virtual int major_version() const { return 0; }
-    /** get the minor version, default version returns 0
-     * \see pressio_compressor_minor_version for the semantics this function should obey
-     */
-    virtual int minor_version() const { return 0; }
-    /** get the patch version, default version returns 0
-     * \see pressio_compressor_patch_version for the semantics this function should obey
-     */
-    virtual int patch_version() const { return 0; }
 
     /**
      * \returns a clone of the current search object

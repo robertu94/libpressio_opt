@@ -1,16 +1,15 @@
 #include "pressio_search.h"
 #include "pressio_search_results.h"
-#include "libpressio_opt_ext/impl/pressio_data_utilities.h"
 
 struct guess_search: public pressio_search_plugin {
   public:
     pressio_search_results search(
-        std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn,
+        std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
         distributed::queue::StopToken&
         ) override {
       pressio_search_results results{};
       results.inputs = input;
-      results.objective = compress_fn(input);
+      results.output = compress_fn(input);
       return results;
     }
 
@@ -24,7 +23,7 @@ struct guess_search: public pressio_search_plugin {
       if(inputs.size() != input.size()) {
         opts.set("opt:prediction",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
       } else {
-        opts.set("opt:prediction", vector_to_owning_pressio_data(input));
+        opts.set("opt:prediction", pressio_data(std::begin(input), std::end(input)));
       }
       return opts;
     }
@@ -32,7 +31,7 @@ struct guess_search: public pressio_search_plugin {
     int set_options(pressio_options const& options) override {
       pressio_data data;
       if(options.get("opt:prediction", &data) == pressio_options_key_set) {
-        input = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
+        input = data.to_vector<pressio_search_results::input_element_type>();
       }
       return 0;
     }

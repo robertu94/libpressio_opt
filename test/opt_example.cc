@@ -3,9 +3,8 @@
 #include <libpressio.h>
 #include <libpressio_ext/cpp/libpressio.h>
 #include <libpressio_ext/io/posix.h>
-#include <libpressio_opt_ext/impl/pressio_data_utilities.h>
 #include <pressio_search_defines.h>
-#include <sz/sz.h>
+#include <sz.h>
 #include <mpi.h>
 
 float* make_data() {
@@ -39,6 +38,23 @@ int main(int argc, char *argv[])
   pressio library;
   std::string metrics_ids[] = {"size", "time", "error_stat"};
   pressio_metrics metrics = library.get_metrics(std::begin(metrics_ids), std::end(metrics_ids));
+  pressio_options metric_options = metrics->get_options();
+  std::vector<std::string> lua_scripts { R"lua(
+    local cr = metrics['size:compression_ratio'];
+    local psnr = metrics['error_stat:psnr'];
+    local threshold = 65.0;
+    local objective = 0;
+    if psnr < threshold then
+      objective = -math.huge;
+    else
+      objective = cr;
+    end
+    return "objective", objective
+  )lua"};
+  metric_options.set("composite:scripts", lua_scripts);
+  metrics->set_options(metric_options);
+
+
   auto compressor = library.get_compressor("opt");
   auto configuration = compressor->get_configuration();
   compressor->set_metrics(metrics);
@@ -46,21 +62,13 @@ int main(int argc, char *argv[])
     std::cout << "configuration:" << std::endl << configuration << std::endl;
   }
 
-  double psnr_threshold = 65.0;
-  std::function<double(std::vector<double>const&)> objective = [=](std::vector<double> const& results) {
-    double cr = results.at(0);
-    double psnr = results.at(1);
-    if(psnr < psnr_threshold) return std::numeric_limits<double>::lowest();
-    return cr;
-  };
-
   auto options = compressor->get_options();
   pressio_data lower_bound{0.0};
   pressio_data upper_bound{0.1};
-  pressio_data guess = vector_to_owning_pressio_data<double>({1e-5});
+  pressio_data guess = pressio_data{1e-5};
   options.set("opt:search", "dist_gridsearch"); //binary search is non-monotonic for this input using SZ_REL
   options.set("dist_gridsearch:search", "fraz"); //binary search is non-monotonic for this input using SZ_REL
-  options.set("dist_gridsearch:num_bins", pressio_data{5ul,});
+  options.set("dist_gridsearch:num_bins", pressio_data{10ul,});
   options.set("dist_gridsearch:overlap_percentage", pressio_data{.1,});
   options.set("dist_gridsearch:comm", (void*)MPI_COMM_WORLD);
   options.set("fraz:nthreads", 4u);
@@ -72,13 +80,11 @@ int main(int argc, char *argv[])
   options.set("opt:local_rel_tolerance", 0.1);
   options.set("opt:global_rel_tolerance", 0.1);
   options.set("opt:max_iterations", 100u);
-  options.set("opt:output", std::vector<std::string>{"size:compression_ratio", "error_stat:psnr"});
+  options.set("opt:output", std::vector<std::string>{"composite:objective", "size:compression_ratio", "error_stat:psnr"});
   options.set("opt:do_decompress", 0);
   options.set("opt:search_metrics", "progress_printer");
   options.set("opt:prediction", guess);
   options.set("opt:do_decompress", 1);
-  options.set("opt:objective_fn", (void*)pressio_opt_multiobjective_stdfn);
-  options.set("opt:objective_data", (void*)&objective);
   options.set("opt:objective_mode", (unsigned int)pressio_search_mode_max);
   options.set("sz:error_bound_mode", REL);
   if(compressor->set_options(options)) {

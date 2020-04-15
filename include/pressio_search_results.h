@@ -18,11 +18,9 @@ struct pressio_search_results {
   using output_type = std::vector<double>;
   /** input to the best iteration*/
   input_type inputs{};
+  /** the multi-dimensional output of the search.  the first entry should represent the summary or primary objective */
+  output_type output{};
 
-  /** type of the objective */
-  using objective_type = double;
-  /** mulit-objective objective */
-  objective_type objective{};
 
   /** status of the search, 0 on success, <0 on warning, >0 on error */
   int status = 0;

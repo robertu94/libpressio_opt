@@ -8,8 +8,10 @@ An example of using LibPressioOpt is under development.
 
 ## Getting Started
 
-LibPressioOpt provides two new major structures on top of LibPressio:
+LibPressioOpt provides three new major features on top of LibPressio:
 
+
++ the `opt` meta compressor which allows for searching for the optimal configuration of the compressor
 + `pressio_search` modules which allow for searching for an optimal set of configuration of parameters
 + `pressio_search_metrics` modules which compute properties of the search process itself
 

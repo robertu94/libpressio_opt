@@ -1,13 +1,12 @@
 #include <algorithm>
 #include <chrono>
 #include "pressio_search.h"
-#include "libpressio_opt_ext/impl/pressio_data_utilities.h"
 #include <libpressio_ext/compat/std_compat.h>
 
 struct binary_search: public pressio_search_plugin {
   public:
     pressio_search_results search(
-        std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn,
+        std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
         distributed::queue::StopToken& token
         ) override {
       pressio_search_results results;
@@ -19,7 +18,8 @@ struct binary_search: public pressio_search_plugin {
       compat::optional<decltype(upper)> upper_value{};
       auto last_time = std::chrono::system_clock::now();
       auto max_time = std::chrono::system_clock::now() + std::chrono::seconds(max_seconds);
-      auto result = compress_fn({current});
+      auto result_v = compress_fn({current});
+      auto result = result_v.front();
 
       auto is_nonmonotonic = [&]() {
         return  (lower_value && *lower_value > result) || //check for non-monotonicity on the lower bound
@@ -48,7 +48,8 @@ struct binary_search: public pressio_search_plugin {
         }
 
         current = (upper-lower)/2.0 + lower;
-        result = compress_fn({current});
+        result_v = compress_fn({current});
+        result = result_v.front();
         ++iter;
       }
       if(check_global_tolerance()) {
@@ -67,7 +68,7 @@ struct binary_search: public pressio_search_plugin {
         results.msg = "time-limit exceeded";
       }
       results.inputs = {current};
-      results.objective = result;
+      results.output = result_v;
 
       return results;
     }
@@ -76,45 +77,42 @@ struct binary_search: public pressio_search_plugin {
     virtual pressio_options get_options(pressio_options const& opt_module_settings) const override {
       pressio_options opts;
       std::vector<std::string> inputs;
-      opt_module_settings.get("opt:inputs", &inputs);
+      get(opt_module_settings, "opt:inputs", &inputs);
       
       //need to reconfigure because input size has changed
       if(inputs.size() != prediction.size()) {
-        opts.set("opt:prediction",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        opts.set("opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        opts.set("opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+        set(opts, "opt:prediction",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+        set(opts, "opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+        set(opts, "opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
       } else {
-        opts.set("opt:prediction", vector_to_owning_pressio_data(prediction));
-        opts.set("opt:lower_bound", vector_to_owning_pressio_data(lower_bound));
-        opts.set("opt:upper_bound", vector_to_owning_pressio_data(upper_bound));
+        set(opts, "opt:prediction", pressio_data(std::begin(prediction), std::end(prediction)));
+        set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(prediction)));
+        set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
       }
-      opts.set("opt:max_iterations", max_iterations);
-      opts.set("opt:max_seconds", max_seconds);
-      opts.set("opt:global_rel_tolerance", global_rel_tolerance);
-      opts.set("opt:target", target);
+      set(opts, "opt:max_iterations", max_iterations);
+      set(opts, "opt:max_seconds", max_seconds);
+      set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
+      set(opts, "opt:target", target);
       return opts;
     }
     virtual int set_options(pressio_options const& options) override {
       pressio_data data;
-      if(options.get("opt:prediction", &data) == pressio_options_key_set) {
-        prediction = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
+      if(get(options, "opt:prediction", &data) == pressio_options_key_set) {
+        prediction = data.to_vector<pressio_search_results::input_element_type>();
         if(prediction.size() > 1) return 1;
       }
-      if(options.get("opt:lower_bound", &data) == pressio_options_key_set) {
-        lower_bound = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
+      if(get(options, "opt:lower_bound", &data) == pressio_options_key_set) {
+        lower_bound = data.to_vector<pressio_search_results::input_element_type>();
         if(lower_bound.size() > 1) return 1;
       }
-      if(options.get("opt:upper_bound", &data) == pressio_options_key_set) {
-        upper_bound = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
+      if(get(options, "opt:upper_bound", &data) == pressio_options_key_set) {
+        upper_bound = data.to_vector<pressio_search_results::input_element_type>();
         if(upper_bound.size() > 1) return 1;
       }
-      options.get("opt:max_iterations", &max_iterations);
-      options.get("opt:max_seconds", &max_seconds);
-      options.get("opt:global_rel_tolerance", &global_rel_tolerance);
-      options.get("opt:target", &target);
-      return 0;
-    }
-    virtual int check_options(pressio_options const& options) const override {
+      get(options, "opt:max_iterations", &max_iterations);
+      get(options, "opt:max_seconds", &max_seconds);
+      get(options, "opt:global_rel_tolerance", &global_rel_tolerance);
+      get(options, "opt:target", &target);
       return 0;
     }
     
@@ -151,7 +149,7 @@ private:
     pressio_search_results::input_type prediction;
     pressio_search_results::input_type lower_bound;
     pressio_search_results::input_type upper_bound;
-    pressio_search_results::objective_type target;
+    pressio_search_results::output_type::value_type target;
     double global_rel_tolerance;
     unsigned int max_iterations;
     unsigned int max_seconds;

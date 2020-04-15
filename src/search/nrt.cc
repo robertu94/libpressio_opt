@@ -3,23 +3,23 @@
 #include <chrono>
 #include "pressio_search.h"
 #include "pressio_search_defines.h"
-#include "libpressio_opt_ext/impl/pressio_data_utilities.h"
 #include <libdistributed_work_queue.h>
 
 struct nrt_search: public pressio_search_plugin {
   private:
       using task_request_t = std::tuple<size_t, std::vector<double>>;
-      using task_response_t = std::tuple<size_t, std::vector<double>, double>;
+      using task_response_t = std::tuple<size_t, std::vector<double>, std::vector<double>>;
 
   public:
     pressio_search_results search(
-        std::function<pressio_search_results::objective_type(pressio_search_results::input_type const&)> compress_fn,
+        std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
         distributed::queue::StopToken& token
         ) override {
       pressio_search_results best_results;
+      double best_objective;
       switch(mode){
         case pressio_search_mode_min:
-          best_results.objective = std::numeric_limits<pressio_search_results::objective_type>::max();
+          best_objective = std::numeric_limits<pressio_search_results::output_type::value_type>::max();
           break;
         default:
           best_results.status = -1;
@@ -54,20 +54,20 @@ struct nrt_search: public pressio_search_plugin {
             [this, &compress_fn](task_request_t const& request) {
               auto const& inputs = std::get<1>(request);
               auto const& id = std::get<0>(request);
-              pressio_search_results::objective_type result = compress_fn(inputs);
+              pressio_search_results::output_type result = compress_fn(inputs);
               return task_response_t{id, inputs, result};
             },
             //any variables you want to have preserved from call to call must be declared here like best_results and idx
-            [&best_results,&idx,&token, &should_stop, this](
+            [&best_results,&best_objective,&idx,&token, &should_stop, this](
                 task_response_t response,
                 distributed::queue::TaskManager<task_request_t>& task_manager
               ) {
               const auto& id = std::get<0>(response);
               const auto& inputs = std::get<1>(response);
-              const auto& objective = std::get<2>(response);
+              const auto& objective = std::get<2>(response).front();
               //update best_results if needed to updated the min
-              if(objective < best_results.objective) {
-                best_results.objective = objective;
+              if(objective < best_objective) {
+                best_objective = objective;
                 best_results.inputs = inputs;
               }
 
@@ -110,9 +110,9 @@ struct nrt_search: public pressio_search_plugin {
         opts.set("opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
         opts.set("opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
       } else {
-        opts.set("opt:prediction", vector_to_owning_pressio_data(prediction));
-        opts.set("opt:lower_bound", vector_to_owning_pressio_data(lower_bound));
-        opts.set("opt:upper_bound", vector_to_owning_pressio_data(upper_bound));
+        opts.set("opt:prediction", pressio_data(std::begin(prediction), std::end(prediction)));
+        opts.set("opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
+        opts.set("opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
       }
       opts.set("opt:max_iterations", max_iterations);
       opts.set("opt:max_seconds", max_seconds);
@@ -124,14 +124,14 @@ struct nrt_search: public pressio_search_plugin {
     int set_options(pressio_options const& options) override {
       pressio_data data;
       if(options.get("opt:prediction", &data) == pressio_options_key_set) {
-        prediction = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
+        prediction = data.to_vector<pressio_search_results::input_element_type>();
         if(prediction.size() > 1) return 1;
       }
       if(options.get("opt:lower_bound", &data) == pressio_options_key_set) {
-        lower_bound = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
+        lower_bound = data.to_vector<pressio_search_results::input_element_type>();
       }
       if(options.get("opt:upper_bound", &data) == pressio_options_key_set) {
-        upper_bound = pressio_data_to_vector<pressio_search_results::input_element_type>(data);
+        upper_bound = data.to_vector<pressio_search_results::input_element_type>();
       }
       options.get("opt:max_iterations", &max_iterations);
       options.get("opt:max_seconds", &max_seconds);
@@ -174,7 +174,7 @@ private:
     pressio_search_results::input_type prediction;
     pressio_search_results::input_type lower_bound;
     pressio_search_results::input_type upper_bound;
-    pressio_search_results::objective_type target;
+    pressio_search_results::output_type::value_type target;
     unsigned int max_iterations = 100;
     unsigned int max_seconds = std::numeric_limits<unsigned int>::max();
     unsigned int mode = pressio_search_mode_target;
