@@ -35,6 +35,9 @@ struct dist_gridsearch_search: public pressio_search_plugin {
           best_objective =
             std::numeric_limits<pressio_search_results::output_type::value_type>::max();
           break;
+        default:
+          best_objective = 0;
+          break;
       }
 
       auto tasks = build_task_list();
@@ -62,36 +65,49 @@ struct dist_gridsearch_search: public pressio_search_plugin {
           [this, &best_results,&best_objective,&stop_token](task_response_t response,
             distributed::queue::TaskManager<task_request_t>& task_manager
             ) {
-            auto const& actual = std::get<0>(response).front();
             auto const& status = std::get<1>(response);
             auto const& inputs = std::get<2>(response);
-            if(status == 0) {
+            if(status == 0 && std::get<0>(response).size() >= 1) {
+              auto const& actual = std::get<0>(response).front();
               switch(mode){
                 case pressio_search_mode_max:
                   if(best_objective < actual) {
+                    best_objective = actual;
                     best_results.output = std::get<0>(response);
                     best_results.inputs = inputs;
+                    if(target && actual > *target){
+                      stop_token.request_stop();
+                      task_manager.request_stop();
+                    }
                   }
                   break;
                 case pressio_search_mode_min:
                   if(best_objective > actual) {
+                    best_objective = actual;
                     best_results.output = std::get<0>(response);
                     best_results.inputs = inputs;
+                    if(target && actual < *target) {
+                      stop_token.request_stop();
+                      task_manager.request_stop();
+                    }
                   }
                   break;
                 case pressio_search_mode_target:
-                  if (loss(target, actual) < best_objective) {
+                  if (loss(*target, actual) < best_objective) {
                     best_results.output = std::get<0>(response);
                     best_results.inputs = inputs;
-                    best_objective = loss(target, actual);
-                    if(best_objective < loss(target*(1.0+global_rel_tolerance), target) ||
-                       best_objective < loss(target*(1.0-global_rel_tolerance), target)) {
+                    best_objective = loss(*target, actual);
+                    if(best_objective < loss(*target*(1.0+global_rel_tolerance), *target) ||
+                       best_objective < loss(*target*(1.0-global_rel_tolerance), *target)) {
                       stop_token.request_stop();
                       task_manager.request_stop();
                     }
                   }
                   break;
               }
+            }
+            if(stop_token.stop_requested()) {
+              task_manager.request_stop();
             }
           });
       return best_results;
@@ -116,8 +132,10 @@ struct dist_gridsearch_search: public pressio_search_plugin {
         set(opts, "dist_gridsearch:overlap_percentage", pressio_data(std::begin(overlap_percentage), std::end(overlap_percentage)));
       }
       set(opts, "opt:target", target);
+      set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
       set(opts, "dist_gridsearch:comm", (void*)parent_comm);
       set(opts, "dist_gridsearch:search", search_method_str);
+      set(opts, "opt:objective_mode", mode);
 
       //get options from child search_method
       auto method_options = search_method->get_options(opt_module_settings);
@@ -143,6 +161,8 @@ struct dist_gridsearch_search: public pressio_search_plugin {
       }
       get(options, "opt:target", &target);
       get(options, "dist_gridsearch:comm", (void**)&parent_comm);
+      get(options, "opt:global_rel_tolerance", &global_rel_tolerance);
+      get(options, "opt:objective_mode", &mode);
       std::string tmp_search_method;
       if(get(options, "dist_gridsearch:search", &tmp_search_method) == pressio_options_key_set) {
         if(tmp_search_method != search_method_str) {
@@ -180,12 +200,11 @@ struct dist_gridsearch_search: public pressio_search_plugin {
     int patch_version() const override { return 1; }
 
     std::shared_ptr<pressio_search_plugin> clone() override {
-      auto tmp = compat::make_unique<dist_gridsearch_search>();
-      tmp->lower_bound = lower_bound;
-      tmp->upper_bound = upper_bound;
-      tmp->search_method_str = search_method_str;
-      tmp->search_method = search_method->clone();
-      return tmp;
+      return compat::make_unique<dist_gridsearch_search>(*this);
+    }
+
+    void set_name_impl(std::string const& new_name) override {
+      search_method->set_name(new_name + "/" + search_method->prefix());
     }
 
 private:
@@ -255,8 +274,8 @@ private:
     std::string search_method_str = "guess";
     pressio_search search_method;
     MPI_Comm parent_comm = MPI_COMM_WORLD;
-    unsigned int mode = pressio_search_mode_target;
-    pressio_search_results::output_type::value_type target;
+    unsigned int mode = pressio_search_mode_none;
+    compat::optional<pressio_search_results::output_type::value_type> target;
     double global_rel_tolerance = .1;
 };
 

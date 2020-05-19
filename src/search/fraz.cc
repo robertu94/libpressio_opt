@@ -3,6 +3,7 @@
 #include "impl/GlobalOptimization.h"
 #include "pressio_search.h"
 #include "pressio_search_defines.h"
+#include "pressio_search_results.h"
 
 namespace {
     auto clamp(double value, double low, double high) {
@@ -24,7 +25,7 @@ namespace {
       return output;
     };
     auto dlib_to_vector(dlib::matrix<double,0,1> const& input) {
-      const pressio_search_results::input_type output(input.begin(), input.end());
+      pressio_search_results::input_type output(input.begin(), input.end());
       return output;
     };
 }
@@ -35,6 +36,7 @@ struct fraz_search: public pressio_search_plugin {
         std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
         distributed::queue::StopToken& token
         ) override {
+
       pressio_search_results results;
       dlib::function_evaluation best_result;
       std::map<pressio_search_results::input_type, pressio_search_results::output_type> cache;
@@ -44,18 +46,20 @@ struct fraz_search: public pressio_search_plugin {
         case pressio_search_mode_target:
           {
             auto threshold = std::min(
-                loss(target, target*(1-global_rel_tolerance)),
-                loss(target, target*(1+global_rel_tolerance))
+                loss(*target, *target*(1-global_rel_tolerance)),
+                loss(*target, *target*(1+global_rel_tolerance))
             );
             auto should_stop = [threshold,&token](double value) {
-              return value < threshold || token.stop_requested();
+              bool target_achived = value < threshold;
+              if (target_achived) token.request_stop();
+              return target_achived || token.stop_requested();
             };
 
             auto fraz = [&cache, &compress_fn, this](dlib::matrix<double,0,1> const& input){
               auto const vec = dlib_to_vector(input);
               auto const result = compress_fn(vec);
               cache[vec] = result;
-              return loss(target, result.front());
+              return loss(*target, result.front());
             };
 
             best_result = pressio_opt::find_min_global(
@@ -82,10 +86,12 @@ struct fraz_search: public pressio_search_plugin {
                 std::numeric_limits<double>::max() * 1e-10
               );
             };
-            auto should_stop = [&token](double value) {
-              return token.stop_requested();
-            };
             if(mode == pressio_search_mode_min) {
+            auto should_stop = [&token, this](double value) {
+              bool target_achived = (target && value < *target);
+              if (target_achived) token.request_stop();
+              return token.stop_requested() || target_achived;
+            };
             best_result = pressio_opt::find_min_global(
                 pool,
                 fraz,
@@ -97,6 +103,11 @@ struct fraz_search: public pressio_search_plugin {
                 pressio_opt::stop_condition(should_stop)
                 );
             } else {
+            auto should_stop = [&token, this](double value) {
+              bool target_achived = (target && value > *target);
+              if (target_achived) token.request_stop();
+              return token.stop_requested() || target_achived;
+            };
             best_result = pressio_opt::find_max_global(
                 pool,
                 fraz,
@@ -127,21 +138,21 @@ struct fraz_search: public pressio_search_plugin {
       
       //need to reconfigure because input size has changed
       if(inputs.size() != prediction.size()) {
-        opts.set("opt:prediction",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        opts.set("opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        opts.set("opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+        set(opts, "opt:prediction",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+        set(opts, "opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+        set(opts, "opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
       } else {
-        opts.set("opt:prediction", pressio_data(std::begin(prediction), std::end(prediction)));
-        opts.set("opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
-        opts.set("opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
+        set(opts, "opt:prediction", pressio_data(std::begin(prediction), std::end(prediction)));
+        set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
+        set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
       }
-      opts.set("opt:max_iterations", max_iterations);
-      opts.set("opt:max_seconds", max_seconds);
-      opts.set("opt:global_rel_tolerance", global_rel_tolerance);
-      opts.set("opt:local_rel_tolerance", local_tolerance);
-      opts.set("opt:target", target);
-      opts.set("opt:objective_mode", mode);
-      opts.set("fraz:nthreads", nthreads);
+      set(opts, "opt:max_iterations", max_iterations);
+      set(opts, "opt:max_seconds", max_seconds);
+      set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
+      set(opts, "opt:local_rel_tolerance", local_tolerance);
+      set(opts, "opt:target", target);
+      set(opts, "opt:objective_mode", mode);
+      set(opts, "fraz:nthreads", nthreads);
       return opts;
     }
     int set_options(pressio_options const& options) override {
@@ -161,9 +172,15 @@ struct fraz_search: public pressio_search_plugin {
       get(options, "opt:global_rel_tolerance", &global_rel_tolerance);
       get(options, "opt:local_rel_tolerance", &local_tolerance);
       get(options, "opt:target", &target);
-      get(options, "opt:objective_mode", &mode);
       get(options, "opt:thread_safe", &thread_safe);
       get(options, "fraz:nthreads", &nthreads);
+
+      unsigned int tmp_mode;
+      if(get(options, "opt:objective_mode", &tmp_mode) == pressio_options_key_set) {
+        if(tmp_mode != pressio_search_mode_none) mode = tmp_mode;
+        else return 1;
+      }
+
       return 0;
     }
     
@@ -197,10 +214,10 @@ struct fraz_search: public pressio_search_plugin {
     }
 
 private:
-    pressio_search_results::input_type prediction;
-    pressio_search_results::input_type lower_bound;
-    pressio_search_results::input_type upper_bound;
-    pressio_search_results::output_type::value_type target;
+    pressio_search_results::input_type prediction{};
+    pressio_search_results::input_type lower_bound{};
+    pressio_search_results::input_type upper_bound{};
+    compat::optional<pressio_search_results::output_type::value_type> target{};
     double local_tolerance = .01;
     double global_rel_tolerance = .1;
     unsigned int max_iterations = 100;

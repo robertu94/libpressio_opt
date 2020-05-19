@@ -14,6 +14,10 @@ extern "C" {
  */
 enum pressio_search_mode {
   /**
+   * do not early terminate
+   */
+  pressio_search_mode_none = 0,
+  /**
    * search for the value which gets within some tolerance of the objective
    * the search may terminate early if such a value is found
    */

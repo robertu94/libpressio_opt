@@ -1,15 +1,29 @@
 #include "pressio_search.h"
 #include "pressio_search_results.h"
+#include <algorithm>
 
-struct guess_search: public pressio_search_plugin {
+struct guess_midpoint_search: public pressio_search_plugin {
   public:
     pressio_search_results search(
         std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
         distributed::queue::StopToken&
         ) override {
+      pressio_search_results::input_type midpoint(lower_bound.size());
+      using value_type = pressio_search_results::input_type::value_type;
+      std::transform(
+          std::begin(lower_bound),
+          std::end(lower_bound),
+          std::begin(upper_bound),
+          std::begin(midpoint),
+          [](value_type lower, value_type upper) {
+            //TODO refactor in C++20 to use std::midpoint
+            return compat::midpoint(lower, upper);
+          }
+          );
+
       pressio_search_results results{};
-      results.inputs = input;
-      results.output = compress_fn(input);
+      results.inputs = midpoint;
+      results.output = compress_fn(midpoint);
       return results;
     }
 
@@ -20,18 +34,23 @@ struct guess_search: public pressio_search_plugin {
       opt_module_settings.get("opt:inputs", &inputs);
       
       //need to reconfigure because input size has changed
-      if(inputs.size() != input.size()) {
-        set(opts, "opt:prediction",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+      if(inputs.size() != lower_bound.size()) {
+        set(opts, "opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
+        set(opts, "opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
       } else {
-        set(opts, "opt:prediction", pressio_data(std::begin(input), std::end(input)));
+        set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
+        set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
       }
       return opts;
     }
 
     int set_options(pressio_options const& options) override {
       pressio_data data;
-      if(options.get("opt:prediction", &data) == pressio_options_key_set) {
-        input = data.to_vector<pressio_search_results::input_element_type>();
+      if(options.get("opt:lower_bound", &data) == pressio_options_key_set) {
+        lower_bound = data.to_vector<pressio_search_results::input_element_type>();
+      }
+      if(options.get("opt:upper_bound", &data) == pressio_options_key_set) {
+        upper_bound = data.to_vector<pressio_search_results::input_element_type>();
       }
       return 0;
     }
@@ -62,12 +81,13 @@ struct guess_search: public pressio_search_plugin {
     int patch_version() const override { return 1; }
 
     std::shared_ptr<pressio_search_plugin> clone() override {
-      return compat::make_unique<guess_search>(*this);
+      return compat::make_unique<guess_midpoint_search>(*this);
     }
 
 private:
-    pressio_search_results::input_type input;
+    pressio_search_results::input_type lower_bound;
+    pressio_search_results::input_type upper_bound;
 };
 
 
-static pressio_register X(search_plugins(), "guess", [](){ return compat::make_unique<guess_search>();});
+static pressio_register X(search_plugins(), "guess_midpoint", [](){ return compat::make_unique<guess_midpoint_search>();});

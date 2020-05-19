@@ -104,7 +104,10 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         if(mode_name == "max") mode = pressio_search_mode_max;
         else if(mode_name == "min") mode = pressio_search_mode_min;
         else if(mode_name == "target") mode = pressio_search_mode_target;
-        if(mode != 0) set(search_options, "opt:objective_mode", mode);
+        else if(mode_name == "none") mode = pressio_search_mode_none;
+
+        set(search_options, "opt:objective_mode", mode);
+        set_type(search_options, "opt:objective_mode_str", pressio_option_charptr_type);
       }
 
       search->set_options(search_options);

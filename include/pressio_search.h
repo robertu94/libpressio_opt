@@ -73,6 +73,14 @@ struct pressio_search {
   /** move constructor
    * \param[in] search the metrics to move from
    * */
+  pressio_search(pressio_search const& rhs): plugin(rhs->clone()) {};
+
+  pressio_search& operator=(pressio_search const& rhs) {
+    if(this == &rhs) return *this;
+    plugin = rhs->clone();
+    return *this;
+  };
+
   pressio_search(pressio_search&& search)=default;
   /** move assignment
    * \param[in] search the metrics to move from

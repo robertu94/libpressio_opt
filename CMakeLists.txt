@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libpressio_opt VERSION "0.1.0" LANGUAGES C CXX)
+project(libpressio_opt VERSION "0.2.0" LANGUAGES C CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/
@@ -20,7 +20,7 @@ set(default_cxx_standard 17)
 if(NOT LIBPRESSIO_OPT_CXX_VERSION)
   set(LIBPRESSIO_OPT_CXX_VERSION ${default_cxx_standard} CACHE 
     STRING "Which version of the cxx standard to expect" FORCE)
-  set_property(CACHE LIBPRESSIO_OPT_CXX_VERSION PROPERTY STRINGS 17)
+  set_property(CACHE LIBPRESSIO_OPT_CXX_VERSION PROPERTY STRINGS 17 20)
 endif()
 
 include(GNUInstallDirs)
@@ -43,6 +43,9 @@ add_library(libpressio_opt
     src/search/guess.cc
     src/search/dist_grid.cc
     src/search/nrt.cc
+    src/search/guess_if.cc
+    src/search/guess_midpoint.cc
+    src/search/random.cc
 
     src/search_metrics/progress_printer.cc
   #public headers

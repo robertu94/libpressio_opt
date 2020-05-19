@@ -27,6 +27,7 @@ int main(int argc, char *argv[])
   int rank, size, thread_provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &thread_provided);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   if(thread_provided != MPI_THREAD_MULTIPLE) {
     if(rank == 0){
       std::cout << "insufficient thread support from MPI" << std::endl;
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
   pressio_data guess = pressio_data{1e-5};
   options.set("opt:search", "dist_gridsearch"); //binary search is non-monotonic for this input using SZ_REL
   options.set("dist_gridsearch:search", "fraz"); //binary search is non-monotonic for this input using SZ_REL
-  options.set("dist_gridsearch:num_bins", pressio_data{10ul,});
+  options.set("dist_gridsearch:num_bins", pressio_data{(size == 1) ? 1 : (size -1)});
   options.set("dist_gridsearch:overlap_percentage", pressio_data{.1,});
   options.set("dist_gridsearch:comm", (void*)MPI_COMM_WORLD);
   options.set("fraz:nthreads", 4u);
@@ -76,7 +77,7 @@ int main(int argc, char *argv[])
   options.set("opt:inputs", std::vector<std::string>{"sz:rel_err_bound"});
   options.set("opt:lower_bound", lower_bound);
   options.set("opt:upper_bound", upper_bound);
-  options.set("opt:target", 400.0);
+  options.set("opt:target", 40000.0);
   options.set("opt:local_rel_tolerance", 0.1);
   options.set("opt:global_rel_tolerance", 0.1);
   options.set("opt:max_iterations", 100u);
