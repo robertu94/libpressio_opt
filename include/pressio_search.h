@@ -19,7 +19,7 @@ class pressio_search_exception : public std::runtime_error {
 /**
  * base class for search plugins
  */
-struct pressio_search_plugin : public pressio_versionable, public pressio_configurable {
+struct pressio_search_plugin : public pressio_versionable, public pressio_configurable, public pressio_errorable {
   public:
     /** destructor */
     virtual ~pressio_search_plugin()=default;

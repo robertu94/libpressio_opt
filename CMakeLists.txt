@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libpressio_opt VERSION "0.2.0" LANGUAGES C CXX)
+project(libpressio_opt VERSION "0.2.1" LANGUAGES C CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/
@@ -43,7 +43,7 @@ add_library(libpressio_opt
     src/search/guess.cc
     src/search/dist_grid.cc
     src/search/nrt.cc
-    src/search/guess_if.cc
+    src/search/guess_first.cc
     src/search/guess_midpoint.cc
     src/search/random.cc
 
@@ -91,6 +91,7 @@ if(BUILD_DOCS)
   set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
   doxygen_add_docs(
     docs
+    ${PROJECT_SOURCE_DIR}/docs
     ${PROJECT_SOURCE_DIR}/README.md
     ${PROJECT_SOURCE_DIR}/include
     COMMENT "Generate Documenation"

@@ -4,7 +4,7 @@ LibPressioOpt provides a plugin for libpressio that provides optimization routin
 
 ## Using LibPressioOpt
 
-An example of using LibPressioOpt is under development.
+Please see `./test/opt_example_c.c` for an example of the API.
 
 ## Getting Started
 
@@ -15,6 +15,7 @@ LibPressioOpt provides three new major features on top of LibPressio:
 + `pressio_search` modules which allow for searching for an optimal set of configuration of parameters
 + `pressio_search_metrics` modules which compute properties of the search process itself
 
+See [Opt Configuration](@ref optoptions) for more information on the configuration options.
 
 ## Dependencies
 
@@ -22,12 +23,29 @@ LibPressioOpt provides three new major features on top of LibPressio:
 + either:
   + `gcc-8.3.0` or later
   + `clang-9.0.0` or later
-+ LibDistributed version 0.0.6 or later
-+ LibPressio version 0.34.4 or later
++ LibDistributed version 0.0.8 or later
++ LibPressio version 0.40.1 or later
 + An MPI implementation supporting MPI-3 or later.  Tested on OpenMPI 4.0.2
 
 
-## Building and Installing LibPressioOpt
+## Installing LibPressioOpt using Spack
+
+LibPressioOpt can be built using [spack](https://github.com/spack/spack/).
+
+```bash
+git clone https://github.com/robertu94/spack_packages robertu94_packages
+spack repo add robertu94_packages
+spack install libpressio-opt
+```
+
+You can substantially reduce install times by not installing ImageMagick and PETSc support for libpressio.
+
+```
+spack install libpressio-opt ^libpressio~magick~petsc
+```
+
+
+## Building and Installing LibPressioOpt Manually
 
 LibPressioOpt uses CMake to configure build options.  See CMake documentation to see how to configure options
 

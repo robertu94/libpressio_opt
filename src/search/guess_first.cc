@@ -57,7 +57,11 @@ struct guess_first_search: public pressio_search_plugin {
       set(opts, "opt:target", target);
       set(opts, "opt:objective_mode", mode);
       set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
-      set(opts, "guess_if:search", search_method_str);
+      set(opts, "guess_first:search", search_method_str);
+      for(auto& child_opts :search_method->get_options(opt_module_settings)) {
+        opts.set(child_opts.first, child_opts.second);
+      }
+
       return opts;
     }
 
@@ -68,7 +72,19 @@ struct guess_first_search: public pressio_search_plugin {
       }
       get(options, "opt:target", &target);
       get(options, "opt:objective_mode", &mode);
-      get(options, "guess_if:search", &search_method_str);
+      std::string tmp_search_method;
+      if(get(options, "guess_first:search", &tmp_search_method) == pressio_options_key_set) {
+        if(tmp_search_method != search_method_str) {
+          pressio_search plugin = search_plugins().build(tmp_search_method);
+          if(plugin) {
+            search_method = std::move(plugin);
+            search_method_str = std::move(tmp_search_method);
+          } else {
+            return set_error(1, "invalid search method");
+          }
+        }
+      }
+      search_method->set_options(options);
       return 0;
     }
 
@@ -79,7 +95,7 @@ struct guess_first_search: public pressio_search_plugin {
     //meta-data
     /** get the prefix used by this compressor for options */
     const char* prefix() const override {
-      return "guess_if";
+      return "guess_first";
     }
 
     /** get a version string for the compressor

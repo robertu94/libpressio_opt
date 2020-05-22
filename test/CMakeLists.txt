@@ -41,6 +41,10 @@ find_package(SZ REQUIRED)
 find_package(ZLIB REQUIRED)
 pkg_search_module(ZSTD  IMPORTED_TARGET libzstd)
 pkg_search_module(FFTW3 IMPORTED_TARGET fftw3)
+
 add_executable(opt_example opt_example.cc)
 target_link_libraries(opt_example PUBLIC LibPressio::libpressio libpressio_opt SZ)
 add_test(opt_example opt_example)
+
+add_executable(opt_example_c opt_example_c.c)
+target_link_libraries(opt_example_c PUBLIC LibPressio::libpressio libpressio_opt SZ)

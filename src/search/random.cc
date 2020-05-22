@@ -7,6 +7,7 @@
 #include <libdistributed_work_queue.h>
 #include <limits>
 #include <random>
+#include <time.h>
 
 namespace {
 auto
@@ -53,8 +54,9 @@ public:
       return best_results;
     }
 
-    std::seed_seq seq{ seed };
-    std::default_random_engine gen{ seq };
+    auto seed_s = std::seed_seq{seed.value_or(time(nullptr))};
+    std::default_random_engine gen{seed_s};
+
     auto point_generator = [this, &gen]() {
       using value_type = pressio_search_results::input_type::value_type;
       pressio_search_results::input_type input(this->lower_bound.size());
@@ -171,6 +173,7 @@ public:
     opts.set("opt:target", target);
     opts.set("opt:objective_mode", mode);
     opts.set("random:comm", (void*)parent_comm);
+    opts.set("random:seed", seed);
     return opts;
   }
   int set_options(pressio_options const& options) override
@@ -189,6 +192,7 @@ public:
     options.get("opt:target", &target);
     options.get("opt:objective_mode", &mode);
     options.get("random:comm", (void**)&parent_comm);
+    options.get("random:seed", &seed);
     return 0;
   }
 
@@ -229,7 +233,7 @@ private:
   unsigned int max_iterations = 100;
   unsigned int max_seconds = std::numeric_limits<unsigned int>::max();
   unsigned int mode = pressio_search_mode_none;
-  unsigned int seed = 0;
+  compat::optional<unsigned int> seed;
   MPI_Comm parent_comm = MPI_COMM_SELF;
   double global_rel_tolerance = .1;
 };

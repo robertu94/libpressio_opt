@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
   pressio_data lower_bound{0.0};
   pressio_data upper_bound{0.1};
   pressio_data guess = pressio_data{1e-5};
-  options.set("opt:search", "dist_gridsearch"); //binary search is non-monotonic for this input using SZ_REL
-  options.set("dist_gridsearch:search", "fraz"); //binary search is non-monotonic for this input using SZ_REL
+  options.set("opt:search", "dist_gridsearch");
+  options.set("dist_gridsearch:search", "fraz");
   options.set("dist_gridsearch:num_bins", pressio_data{(size == 1) ? 1 : (size -1)});
   options.set("dist_gridsearch:overlap_percentage", pressio_data{.1,});
   options.set("dist_gridsearch:comm", (void*)MPI_COMM_WORLD);
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   size_t dims[] = {500,500,100};
   auto input_data = pressio_data_new_move(pressio_float_dtype, make_data(), 3, dims, pressio_data_libc_free_fn, nullptr);
   auto compressed = pressio_data_new_empty(pressio_byte_dtype, 0, 0);
-  auto decompressed = pressio_data_new_owning(pressio_double_dtype, 3, dims);
+  auto decompressed = pressio_data_new_owning(pressio_float_dtype, 3, dims);
   
   if(compressor->compress(input_data, compressed)) {
     std::cerr << compressor->error_msg() << std::endl;

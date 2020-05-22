@@ -140,7 +140,7 @@ struct dist_gridsearch_search: public pressio_search_plugin {
       //get options from child search_method
       auto method_options = search_method->get_options(opt_module_settings);
       for (auto const& options : method_options) {
-        set(opts, options.first, options.second);
+        opts.set(options.first, options.second);
       }
       return opts;
     }
@@ -166,8 +166,13 @@ struct dist_gridsearch_search: public pressio_search_plugin {
       std::string tmp_search_method;
       if(get(options, "dist_gridsearch:search", &tmp_search_method) == pressio_options_key_set) {
         if(tmp_search_method != search_method_str) {
-          search_method_str = tmp_search_method;
-          search_method = search_plugins().build(search_method_str);
+          auto plugin = search_plugins().build(search_method_str);
+          if(plugin) {
+            search_method = std::move(plugin);
+            search_method_str = std::move(tmp_search_method);
+          } else {
+            return set_error(1, "invalid search method");
+          }
         }
       }
       search_method->set_options(options);
