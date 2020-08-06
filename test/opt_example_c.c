@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
   struct pressio_data* overlap_percentage_data = pressio_data_new_nonowning(pressio_double_dtype, num_bins, 1, bound_dims);
   pressio_options_set_data(options, "dist_gridsearch:num_bins", num_bins_data);
   pressio_options_set_data(options, "dist_gridsearch:overlap_percentage", overlap_percentage_data);
-  pressio_options_set_userptr(options, "dist_gridsearch:comm", (void*)MPI_COMM_WORLD);
+  pressio_options_set_userptr(options, "distributed:comm", (void*)MPI_COMM_WORLD);
 
   //configure fraz's unique fixed parameters
   //  NOTE: some search methods can use multiple threads in addition to multiple processes

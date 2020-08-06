@@ -29,6 +29,7 @@ Additionally, there are several options which are common to each of the search a
 
 | option name               | type                                         | description |
 |---------------------------|----------------------------------------------|------------------------|
+|`distributed:mpi_comm`                 | `MPI_Comm`                                   | `MPI_Comm` passed to libdistributed |
 |`opt:lower_bound`          | `pressio_data` containing double[`n_inputs`] | the lower bound to search |
 |`opt:upper_bound`          | `pressio_data` containing double[`n_inputs`] | the upper bound to search |
 |`opt:target`               | double                                       | the target the user wants to achieve, meaning dependson opt:objective_mode |
@@ -85,6 +86,7 @@ Random search just randomly evaluates some points.
 
 Random search supports the following common options:
 
++ `distributed:mpi_comm`
 + `opt:lower_bound`
 + `opt:max_iterations`
 + `opt:max_seconds`
@@ -97,7 +99,6 @@ Random search also supports the following common options:
 
 |  option name     | type         | description                                 |  
 |------------------|--------------|---------------------------------------------|  
-| `random:comm`    | `MPI_Comm`               | a MPI Communicator to distribute the search over                 |
 | `random:seed`    | `optional<unsigned int>` | the seed to use, if the optional is empty, a random seed is used |
 
 ### Guess (guess)
@@ -190,6 +191,7 @@ Splits the domain into a number of bins and executes a subsearch on each in sepa
 
 Distributed grid search supports the following common options:
 
++ `distributed:mpi_comm`
 + `opt:lower_bound`
 + `opt:upper_bound`
 + `opt:target`
@@ -203,4 +205,3 @@ Distributed grid search as the following unique options:
 | `dist_gridsearch:search`             | string                                                 | the search method to use |
 | `dist_gridsearch:num_bins`           | `pressio_data` containing unsigned int[num_dimensions] | the number of search bins to divide each dimension into |
 | `dist_gridsearch:overlap_percentage` | `pressio_data` containing double[]                     | the amount to overlap each bin |
-| `dist_gridsearch:comm`               | `MPI_Comm`                                             | a MPI communicator to distribute the search over |

@@ -8,6 +8,9 @@
 #include <limits>
 #include <random>
 #include <time.h>
+#include <mpi.h>
+#include <libpressio_ext/compat/memory.h>
+#include <libpressio_ext/cpp/distributed_manager.h>
 
 namespace {
 auto
@@ -84,8 +87,8 @@ public:
                  .count() > max_seconds;
     };
 
-    distributed::queue::work_queue(
-      parent_comm, std::begin(inital_points), std::end(inital_points),
+    manager.work_queue(
+      std::begin(inital_points), std::end(inital_points),
       [this, &compress_fn](task_request_t const& request) {
         auto const& inputs = std::get<0>(request);
         pressio_search_results::output_type result = compress_fn(inputs);
@@ -93,7 +96,7 @@ public:
       },
       [&best_results, &best_objective, &token, &should_stop,
        this](task_response_t response,
-             distributed::queue::TaskManager<task_request_t>& task_manager) {
+             distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager) {
         const auto& inputs = std::get<0>(response);
         const auto& objective = std::get<1>(response).front();
 
@@ -172,7 +175,7 @@ public:
     opts.set("opt:max_seconds", max_seconds);
     opts.set("opt:target", target);
     opts.set("opt:objective_mode", mode);
-    opts.set("random:comm", (void*)parent_comm);
+    opts.copy_from(manager.get_options());
     opts.set("random:seed", seed);
     return opts;
   }
@@ -191,7 +194,7 @@ public:
     options.get("opt:max_seconds", &max_seconds);
     options.get("opt:target", &target);
     options.get("opt:objective_mode", &mode);
-    options.get("random:comm", (void**)&parent_comm);
+    manager.set_options(options);
     options.get("random:seed", &seed);
     return 0;
   }
@@ -234,10 +237,13 @@ private:
   unsigned int max_seconds = std::numeric_limits<unsigned int>::max();
   unsigned int mode = pressio_search_mode_none;
   compat::optional<unsigned int> seed;
-  MPI_Comm parent_comm = MPI_COMM_SELF;
+  pressio_distributed_manager manager = pressio_distributed_manager(
+      /*max_masters*/1,
+      /*max_ranks_per_worker*/1
+      );
   double global_rel_tolerance = .1;
 };
 
-static pressio_register X(search_plugins(), "random_search", []() {
+static pressio_register guess_random_register(search_plugins(), "random_search", []() {
   return compat::make_unique<random_search>();
 });

@@ -1,6 +1,8 @@
 #include "pressio_search.h"
 #include "pressio_search_results.h"
 #include "pressio_search_defines.h"
+#include <libpressio_ext/cpp/pressio.h>
+#include <libpressio_ext/compat/memory.h>
 
 struct guess_first_search: public pressio_search_plugin {
   public:
@@ -57,10 +59,7 @@ struct guess_first_search: public pressio_search_plugin {
       set(opts, "opt:target", target);
       set(opts, "opt:objective_mode", mode);
       set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
-      set(opts, "guess_first:search", search_method_str);
-      for(auto& child_opts :search_method->get_options(opt_module_settings)) {
-        opts.set(child_opts.first, child_opts.second);
-      }
+      set_meta(opts, "guess_first:search", search_method_str, search_method, opts);
 
       return opts;
     }
@@ -72,18 +71,7 @@ struct guess_first_search: public pressio_search_plugin {
       }
       get(options, "opt:target", &target);
       get(options, "opt:objective_mode", &mode);
-      std::string tmp_search_method;
-      if(get(options, "guess_first:search", &tmp_search_method) == pressio_options_key_set) {
-        if(tmp_search_method != search_method_str) {
-          pressio_search plugin = search_plugins().build(tmp_search_method);
-          if(plugin) {
-            search_method = std::move(plugin);
-            search_method_str = std::move(tmp_search_method);
-          } else {
-            return set_error(1, "invalid search method");
-          }
-        }
-      }
+      get_meta(options, "guess_first:search", search_plugins(), search_method_str, search_method);
       search_method->set_options(options);
       return 0;
     }
@@ -131,4 +119,4 @@ private:
 };
 
 
-static pressio_register X(search_plugins(), "guess_first", [](){ return compat::make_unique<guess_first_search>();});
+static pressio_register guess_first_register(search_plugins(), "guess_first", [](){ return compat::make_unique<guess_first_search>();});

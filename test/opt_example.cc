@@ -63,6 +63,16 @@ int main(int argc, char *argv[])
     std::cout << "configuration:" << std::endl << configuration << std::endl;
   }
 
+  auto const inputs = std::vector<std::string>{"sz:rel_err_bound"};
+  auto const outputs = std::vector<std::string>{"composite:objective", "size:compression_ratio", "error_stat:psnr"};
+  auto const headers = [&]()
+  {
+    std::vector<std::string> headers;
+    headers.insert(headers.end(), inputs.begin(), inputs.end());
+    headers.insert(headers.end(), outputs.begin(), outputs.end());
+    return headers;
+  }();
+
   auto options = compressor->get_options();
   pressio_data lower_bound{0.0};
   pressio_data upper_bound{0.1};
@@ -71,19 +81,22 @@ int main(int argc, char *argv[])
   options.set("dist_gridsearch:search", "fraz");
   options.set("dist_gridsearch:num_bins", pressio_data{(size == 1) ? 1 : (size -1)});
   options.set("dist_gridsearch:overlap_percentage", pressio_data{.1,});
-  options.set("dist_gridsearch:comm", (void*)MPI_COMM_WORLD);
+  options.set("distributed:comm", (void*)MPI_COMM_WORLD);
   options.set("fraz:nthreads", 4u);
   options.set("opt:compressor", "sz");
-  options.set("opt:inputs", std::vector<std::string>{"sz:rel_err_bound"});
+  options.set("opt:inputs", inputs);
   options.set("opt:lower_bound", lower_bound);
   options.set("opt:upper_bound", upper_bound);
   options.set("opt:target", 40000.0);
   options.set("opt:local_rel_tolerance", 0.1);
   options.set("opt:global_rel_tolerance", 0.1);
   options.set("opt:max_iterations", 100u);
-  options.set("opt:output", std::vector<std::string>{"composite:objective", "size:compression_ratio", "error_stat:psnr"});
+  options.set("opt:output", outputs);
   options.set("opt:do_decompress", 0);
-  options.set("opt:search_metrics", "progress_printer");
+  options.set("opt:search_metrics", "composite_search");
+  options.set("composite_search:search_metrics", std::vector<std::string>{"progress_printer", "record_search"});
+  options.set("io:path", "/tmp/trace.csv");
+  options.set("csv:headers", headers);
   options.set("opt:prediction", guess);
   options.set("opt:do_decompress", 1);
   options.set("opt:objective_mode", (unsigned int)pressio_search_mode_max);

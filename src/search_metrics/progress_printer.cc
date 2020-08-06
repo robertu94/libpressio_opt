@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include "pressio_search_metrics.h"
+#include <libpressio_ext/compat/memory.h>
 #include <mpi.h>
 
 struct progress_printer : public pressio_search_metrics_plugin {
@@ -25,16 +26,24 @@ struct progress_printer : public pressio_search_metrics_plugin {
   }
 
   void end_iter(pressio_search_results::input_type const& input, pressio_search_results::output_type const& out) override {
-    format(format(std::cout << rank_str << iteration << ',',  input), out) << out.front() << std::endl;
+    std::cout << "rank={" << rank_str << "} iter={" << iteration << "} input={";
+    format(std::cout, input);
+    std::cout << "} output={";
+    format(std::cout, out);
+    std::cout << "} objective={" << out.front() << '}' << std::endl;
     iteration++;
   }
 
   void end_search(pressio_search_results::input_type const& input, pressio_search_results::output_type const& out) override {
-    format(format(std::cout << "final iter=" << iteration << ": inputs=",  input) << " output=", out) << std::endl;
+    format(format(std::cout << "final_iter={" << iteration << "} inputs={",  input) << "} output={", out) << '}' << std::endl;
   }
 
   virtual pressio_options get_metrics_results() override {
     return pressio_options();
+  }
+
+  const char* prefix() const override {
+    return "progress_printer";
   }
 
   std::shared_ptr<pressio_search_metrics_plugin> clone() override {

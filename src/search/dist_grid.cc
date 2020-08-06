@@ -2,6 +2,8 @@
 #include "pressio_search_results.h"
 #include "pressio_search_defines.h"
 #include <libdistributed_work_queue.h>
+#include <libpressio_ext/compat/memory.h>
+#include <libpressio_ext/cpp/distributed_manager.h>
 
 namespace {
   auto loss(pressio_search_results::output_type::value_type target, pressio_search_results::output_type::value_type actual) {
@@ -42,12 +44,12 @@ struct dist_gridsearch_search: public pressio_search_plugin {
 
       auto tasks = build_task_list();
 
-      distributed::queue::
+      manager.
         work_queue(
-          parent_comm, std::begin(tasks), std::end(tasks),
+          std::begin(tasks), std::end(tasks),
           [this, compress_fn](
             task_request_t const& task,
-            distributed::queue::TaskManager<task_request_t>& task_manager) {
+            distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager) {
             //set lower and upper bounds
             auto grid_lower = lower_bound;
             auto grid_upper = upper_bound;
@@ -55,15 +57,16 @@ struct dist_gridsearch_search: public pressio_search_plugin {
             grid_upper = std::get<1>(task);
 
             pressio_options options;
-            set(options, "opt:lower_bound", pressio_data(std::begin(grid_lower), std::end(grid_lower)));
-            set(options, "opt:upper_bound", pressio_data(std::begin(grid_upper), std::end(grid_upper)));
+            options.set("opt:lower_bound", pressio_data(std::begin(grid_lower), std::end(grid_lower)));
+            options.set("opt:upper_bound", pressio_data(std::begin(grid_upper), std::end(grid_upper)));
+            options.set("distributed:comm", (void*)task_manager.get_subcommunicator());
             search_method->set_options(options);
 
             auto grid_result = search_method->search(compress_fn, task_manager);
             return task_response_t{grid_result.output, grid_result.status, grid_result.inputs};
           },
           [this, &best_results,&best_objective,&stop_token](task_response_t response,
-            distributed::queue::TaskManager<task_request_t>& task_manager
+            distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager
             ) {
             auto const& status = std::get<1>(response);
             auto const& inputs = std::get<2>(response);
@@ -133,15 +136,10 @@ struct dist_gridsearch_search: public pressio_search_plugin {
       }
       set(opts, "opt:target", target);
       set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
-      set(opts, "dist_gridsearch:comm", (void*)parent_comm);
-      set(opts, "dist_gridsearch:search", search_method_str);
+      opts.copy_from(manager.get_options());
+      set_meta(opts, "dist_gridsearch:search", search_method_str, search_method, opts);
       set(opts, "opt:objective_mode", mode);
 
-      //get options from child search_method
-      auto method_options = search_method->get_options(opt_module_settings);
-      for (auto const& options : method_options) {
-        opts.set(options.first, options.second);
-      }
       return opts;
     }
 
@@ -160,22 +158,10 @@ struct dist_gridsearch_search: public pressio_search_plugin {
         overlap_percentage = data.to_vector<double>();
       }
       get(options, "opt:target", &target);
-      get(options, "dist_gridsearch:comm", (void**)&parent_comm);
+      manager.set_options(options);
       get(options, "opt:global_rel_tolerance", &global_rel_tolerance);
       get(options, "opt:objective_mode", &mode);
-      std::string tmp_search_method;
-      if(get(options, "dist_gridsearch:search", &tmp_search_method) == pressio_options_key_set) {
-        if(tmp_search_method != search_method_str) {
-          auto plugin = search_plugins().build(search_method_str);
-          if(plugin) {
-            search_method = std::move(plugin);
-            search_method_str = std::move(tmp_search_method);
-          } else {
-            return set_error(1, "invalid search method");
-          }
-        }
-      }
-      search_method->set_options(options);
+      get_meta(options, "dist_gridsearch:search", search_plugins(), search_method_str, search_method);
       return 0;
     }
     
@@ -278,11 +264,14 @@ private:
     std::vector<size_t> num_bins{};
     std::string search_method_str = "guess";
     pressio_search search_method;
-    MPI_Comm parent_comm = MPI_COMM_WORLD;
     unsigned int mode = pressio_search_mode_none;
     compat::optional<pressio_search_results::output_type::value_type> target;
     double global_rel_tolerance = .1;
+    pressio_distributed_manager manager = pressio_distributed_manager(
+        /*max_masters*/1,
+        /*max_ranks_per_worker*/pressio_distributed_manager::unlimited
+        );
 };
 
 
-static pressio_register X(search_plugins(), "dist_gridsearch", [](){ return compat::make_unique<dist_gridsearch_search>();});
+static pressio_register dist_search_register(search_plugins(), "dist_gridsearch", [](){ return compat::make_unique<dist_gridsearch_search>();});

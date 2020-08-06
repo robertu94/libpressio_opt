@@ -4,6 +4,8 @@
 #include "pressio_search.h"
 #include "pressio_search_defines.h"
 #include <libdistributed_work_queue.h>
+#include <libpressio_ext/compat/memory.h>
+#include <libpressio_ext/cpp/distributed_manager.h>
 
 struct nrt_search: public pressio_search_plugin {
   private:
@@ -48,9 +50,9 @@ struct nrt_search: public pressio_search_plugin {
           idx > max_iterations;
       };
 
-      distributed::queue::
+      manager.
         work_queue(
-            parent_comm, std::begin(inital_points), std::end(inital_points),
+            std::begin(inital_points), std::end(inital_points),
             [this, &compress_fn](task_request_t const& request) {
               auto const& inputs = std::get<1>(request);
               auto const& id = std::get<0>(request);
@@ -60,7 +62,7 @@ struct nrt_search: public pressio_search_plugin {
             //any variables you want to have preserved from call to call must be declared here like best_results and idx
             [&best_results,&best_objective,&idx,&token, &should_stop, this](
                 task_response_t response,
-                distributed::queue::TaskManager<task_request_t>& task_manager
+                distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager
               ) {
               const auto& id = std::get<0>(response);
               const auto& inputs = std::get<1>(response);
@@ -118,7 +120,7 @@ struct nrt_search: public pressio_search_plugin {
       opts.set("opt:max_seconds", max_seconds);
       opts.set("opt:target", target);
       opts.set("opt:objective_mode", mode);
-      opts.set("nrt:comm", (void*)parent_comm);
+      opts.copy_from(manager.get_options());
       return opts;
     }
     int set_options(pressio_options const& options) override {
@@ -137,7 +139,7 @@ struct nrt_search: public pressio_search_plugin {
       options.get("opt:max_seconds", &max_seconds);
       options.get("opt:target", &target);
       options.get("opt:objective_mode", &mode);
-      options.get("nrt:comm", (void**)&parent_comm);
+      manager.set_options(options);
       return 0;
     }
     
@@ -178,8 +180,11 @@ private:
     unsigned int max_iterations = 100;
     unsigned int max_seconds = std::numeric_limits<unsigned int>::max();
     unsigned int mode = pressio_search_mode_target;
-    MPI_Comm parent_comm = MPI_COMM_SELF;
+    pressio_distributed_manager manager = pressio_distributed_manager(
+        /*max_masters*/1,
+        /*max_ranks_per_worker*/1
+        );
 };
 
 
-static pressio_register X(search_plugins(), "nrt", [](){ return compat::make_unique<nrt_search>();});
+static pressio_register guess_nrt_register(search_plugins(), "nrt", [](){ return compat::make_unique<nrt_search>();});

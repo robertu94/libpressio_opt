@@ -1,5 +1,7 @@
 #include "pressio_search.h"
 #include "pressio_search_results.h"
+#include <libpressio_ext/compat/numeric.h>
+#include <libpressio_ext/compat/memory.h>
 #include <algorithm>
 
 struct guess_midpoint_search: public pressio_search_plugin {
@@ -16,7 +18,6 @@ struct guess_midpoint_search: public pressio_search_plugin {
           std::begin(upper_bound),
           std::begin(midpoint),
           [](value_type lower, value_type upper) {
-            //TODO refactor in C++20 to use std::midpoint
             return compat::midpoint(lower, upper);
           }
           );
@@ -90,4 +91,4 @@ private:
 };
 
 
-static pressio_register X(search_plugins(), "guess_midpoint", [](){ return compat::make_unique<guess_midpoint_search>();});
+static pressio_register guess_midpoint_register(search_plugins(), "guess_midpoint", [](){ return compat::make_unique<guess_midpoint_search>();});

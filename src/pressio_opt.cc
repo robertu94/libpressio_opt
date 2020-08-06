@@ -14,6 +14,7 @@
 #include "pressio_search.h"
 #include "pressio_search_metrics.h"
 #include "pressio_search_defines.h"
+#include <libpressio_ext/compat/memory.h>
 
 namespace {
   template <class Registry>
@@ -48,22 +49,13 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
 
     struct pressio_options get_options_impl() const override {
       struct pressio_options options;
-      set(options, "opt:compressor", compressor_method);
-      set(options, "opt:search", search_method);
       set(options, "opt:inputs", input_settings);
       set(options, "opt:output", output_settings);
       set(options, "opt:do_decompress", do_decompress);
-      set(options, "opt:search_metrics", search_metrics_method);
       set_type(options, "opt:objective_mode_name", pressio_option_charptr_type);
-      auto search_options = search->get_options(options);
-      for (auto const& option : search_options) {
-        options.set(option.first, option.second);
-      }
-      auto compressor_options = compressor->get_options();
-      for (auto const& option : compressor_options) {
-        options.set(option.first, option.second);
-      }
-
+      set_meta(options, "opt:compressor", compressor_method, compressor);
+      set_meta(options, "opt:search_metrics", search_metrics_method, search_metrics);
+      set_meta(options, "opt:search", search_method, search, options);
       return options;
     }
 
@@ -81,25 +73,19 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
     }
 
     int set_options_impl(struct pressio_options const& options) override {
-      if(get(options, "opt:compressor", &compressor_method) == pressio_options_key_set) {
-        compressor = library.get_compressor(compressor_method);
-      }
-      if(get(options, "opt:search", &search_method) == pressio_options_key_set) {
-        search = search_plugins().build(search_method);
-        if(!search) {
-          return invalid_search_plugin(search_method);
-        }
-      }
-      get(options, "opt:inputs", &input_settings);
-      get(options, "opt:output", &output_settings);
-      get(options, "opt:do_decompress", &do_decompress);
-      compressor->set_options(options);
-
       pressio_options search_options = options;
       search_options.set("opt:thread_safe", is_thread_safe());
 
+      get_meta(search_options, "opt:compressor", compressor_plugins(), compressor_method, compressor);
+      get_meta(search_options, "opt:search", search_plugins(), search_method, search);
+      get_meta(search_options, "opt:search_metrics", search_metrics_plugins(), search_metrics_method, search_metrics);
+      get(search_options, "opt:inputs", &input_settings);
+      get(search_options, "opt:output", &output_settings);
+      get(search_options, "opt:do_decompress", &do_decompress);
+
+
       std::string mode_name;
-      if(get(options, "opt:objective_mode_name", &mode_name) == pressio_options_key_set) {
+      if(get(search_options, "opt:objective_mode_name", &mode_name) == pressio_options_key_set) {
         unsigned int mode = 0;
         if(mode_name == "max") mode = pressio_search_mode_max;
         else if(mode_name == "min") mode = pressio_search_mode_min;
@@ -110,7 +96,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         set_type(search_options, "opt:objective_mode_str", pressio_option_charptr_type);
       }
 
-      search->set_options(search_options);
+      
       return 0;
     }
 
@@ -247,6 +233,8 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
 
     void set_name_impl(std::string const& new_name) override {
       compressor->set_name(new_name + "/" + compressor->prefix());
+      search->set_name(new_name + "/" + search->prefix());
+      search_metrics->set_name(new_name + "/" + search_metrics->prefix());
     }
 
     std::shared_ptr<libpressio_compressor_plugin> clone() override {
@@ -258,6 +246,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
 
       tmp->search = search->clone();
       tmp->search_method = search_method;
+
       tmp->search_metrics = search_metrics->clone();
 
       tmp->input_settings = input_settings;

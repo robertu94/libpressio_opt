@@ -1,5 +1,7 @@
 #ifndef PRESSIO_SEARCH_METRICS_H
 #define PRESSIO_SEARCH_METRICS_H
+#include <libpressio_ext/cpp/configurable.h>
+#include <libpressio_ext/cpp/errorable.h>
 #include<libpressio_ext/cpp/pressio.h>
 #include<libpressio_ext/cpp/options.h>
 
@@ -13,28 +15,9 @@
 /**
  * base class for search metrics plugins
  */
-struct pressio_search_metrics_plugin {
+struct pressio_search_metrics_plugin : public pressio_configurable, public pressio_errorable{
   virtual ~pressio_search_metrics_plugin()=default;
-
-  //options are optional for metrics
-
-  /** validate the options passed the search metrics module 
-   * \param[in] options the configuration to check
-   * \returns 0 if there was no error, non zero if there was a error
-   * */
-  virtual int check_metrics_options(pressio_options const& options) { return 0; }
-  /** apply the options passed the search metrics module 
-   * \param[in] options the configuration to apply
-   * \returns 0 if there was no error, non zero if there was a error
-   * */
-  virtual int set_metrics_options(pressio_options const& options) { return 0; }
-  /**
-   * get the runtime settings of the search metrics module 
-   *
-   * \returns the options for this search metrics module
-   */
-  virtual pressio_options get_metrics_options() const { return pressio_options(); }
-
+  //
   //hooks for methods
   /**
    * called at the beginning of each iteration of the search
@@ -85,6 +68,19 @@ struct pressio_search_metrics {
   pressio_search_metrics(std::shared_ptr<pressio_search_metrics_plugin>&& impl): plugin(std::forward<std::shared_ptr<pressio_search_metrics_plugin>>(impl)) {}
   /** default constructor */
   pressio_search_metrics()=default;
+  /** copy constructor
+   * \param[in] search_metrics the metrics to copy from
+   * */
+  pressio_search_metrics(pressio_search_metrics const& rhs): plugin(rhs->clone()) {}
+
+  /** move assignment
+   * \param[in] search_metrics the metrics to copy from
+   * */
+  pressio_search_metrics& operator=(pressio_search_metrics const& rhs) {
+    if(this == &rhs) return *this;
+    this->plugin = rhs.plugin->clone();
+    return *this;
+  }
   /** move constructor
    * \param[in] search_metrics the metrics to move from
    * */

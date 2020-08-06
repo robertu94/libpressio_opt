@@ -4,6 +4,7 @@
 #include "pressio_search.h"
 #include "pressio_search_defines.h"
 #include "pressio_search_results.h"
+#include <libpressio_ext/compat/memory.h>
 
 namespace {
     auto clamp(double value, double low, double high) {
@@ -228,4 +229,4 @@ private:
 };
 
 
-static pressio_register X(search_plugins(), "fraz", [](){ return compat::make_unique<fraz_search>();});
+static pressio_register fraz_register(search_plugins(), "fraz", [](){ return compat::make_unique<fraz_search>();});

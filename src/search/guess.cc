@@ -1,5 +1,6 @@
 #include "pressio_search.h"
 #include "pressio_search_results.h"
+#include <libpressio_ext/compat/memory.h>
 
 struct guess_search: public pressio_search_plugin {
   public:
@@ -70,4 +71,4 @@ private:
 };
 
 
-static pressio_register X(search_plugins(), "guess", [](){ return compat::make_unique<guess_search>();});
+static pressio_register guess_register(search_plugins(), "guess", [](){ return compat::make_unique<guess_search>();});
