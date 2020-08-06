@@ -35,17 +35,17 @@ before_install:
   - cmake --build .
   - sudo cmake --build . --target install
   - popd
-  - git clone https://github.com/robertu94/libpressio
-  - mkdir libpressio/build
-  - pushd libpressio/build
-  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DLIBPRESSIO_HAS_SZ=ON
-  - cmake --build .
-  - sudo cmake --build . --target install
-  - popd
   - git clone https://github.com/robertu94/libdistributed
   - mkdir libdistributed/build
   - pushd libdistributed/build
   - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+  - cmake --build .
+  - sudo cmake --build . --target install
+  - popd
+  - git clone https://github.com/robertu94/libpressio
+  - mkdir libpressio/build
+  - pushd libpressio/build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DLIBPRESSIO_HAS_SZ=ON -DLIBPRESSIO_HAS_LIBDISTRIBUTED=ON -DLIBPRESSIO_HAS_MPI=ON
   - cmake --build .
   - sudo cmake --build . --target install
   - popd
