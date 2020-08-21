@@ -74,6 +74,17 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
 
     int set_options_impl(struct pressio_options const& options) override {
       pressio_options search_options = options;
+      std::string mode_name;
+      if(get(search_options, "opt:objective_mode_name", &mode_name) == pressio_options_key_set) {
+        unsigned int mode = 0;
+        if(mode_name == "max") mode = pressio_search_mode_max;
+        else if(mode_name == "min") mode = pressio_search_mode_min;
+        else if(mode_name == "target") mode = pressio_search_mode_target;
+        else if(mode_name == "none") mode = pressio_search_mode_none;
+
+        search_options.set(search->get_name(), "opt:objective_mode", mode);
+        search_options.set_type(search->get_name(), "opt:objective_mode_name", pressio_option_charptr_type);
+      }
       search_options.set("opt:thread_safe", is_thread_safe());
 
       get_meta(search_options, "opt:compressor", compressor_plugins(), compressor_method, compressor);
@@ -83,18 +94,6 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       get(search_options, "opt:output", &output_settings);
       get(search_options, "opt:do_decompress", &do_decompress);
 
-
-      std::string mode_name;
-      if(get(search_options, "opt:objective_mode_name", &mode_name) == pressio_options_key_set) {
-        unsigned int mode = 0;
-        if(mode_name == "max") mode = pressio_search_mode_max;
-        else if(mode_name == "min") mode = pressio_search_mode_min;
-        else if(mode_name == "target") mode = pressio_search_mode_target;
-        else if(mode_name == "none") mode = pressio_search_mode_none;
-
-        set(search_options, "opt:objective_mode", mode);
-        set_type(search_options, "opt:objective_mode_str", pressio_option_charptr_type);
-      }
 
       
       return 0;
@@ -142,8 +141,11 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         std::vector<double> results;
         for (auto const& output_setting : output_settings) {
           double result;
+          if(metrics_results.find(output_setting) == metrics_results.end()) {
+               throw pressio_search_exception(std::string("metric does not exist: ") + output_setting);
+          }
           if(metrics_results.cast(output_setting, &result, pressio_conversion_explicit) != pressio_options_key_set) {
-               throw pressio_search_exception(std::string("failed to retrieve metric: ") + output_setting);
+               throw pressio_search_exception(std::string("metric is not convertible to double: ") + output_setting);
           }
           results.push_back(result);
         }
@@ -183,8 +185,11 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         std::vector<double> results;
         for (auto const& output_setting : output_settings) {
           double result;
+          if(metrics_results.find(output_setting) == metrics_results.end()) {
+               throw pressio_search_exception(std::string("metric does not exist: ") + output_setting);
+          }
           if(metrics_results.cast(output_setting, &result, pressio_conversion_explicit) != pressio_options_key_set) {
-               throw pressio_search_exception(std::string("failed to retrieve metric: ") + output_setting);
+               throw pressio_search_exception(std::string("metric is not convertible to double: ") + output_setting);
           }
           results.push_back(result);
         }
