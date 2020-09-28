@@ -142,6 +142,12 @@ struct nrt_search: public pressio_search_plugin {
       manager.set_options(options);
       return 0;
     }
+
+    void set_name_impl(std::string const& new_name) override {
+      manager.set_name(new_name);
+    }
+
+
     
     //meta-data
     /** get the prefix used by this compressor for options */

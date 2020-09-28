@@ -45,20 +45,17 @@ int main(int argc, char *argv[])
     local psnr = metrics['error_stat:psnr'];
     local threshold = 65.0;
     local objective = 0;
-    if psnr < threshold then
+    if (psnr ~= nil and psnr < threshold) then
       objective = -math.huge;
     else
       objective = cr;
     end
     return "objective", objective
   )lua"};
-  metric_options.set("composite:scripts", lua_scripts);
-  metrics->set_options(metric_options);
 
 
   auto compressor = library.get_compressor("opt");
   auto configuration = compressor->get_configuration();
-  compressor->set_metrics(metrics);
   if(rank == 0) {
     std::cout << "configuration:" << std::endl << configuration << std::endl;
   }
@@ -101,6 +98,11 @@ int main(int argc, char *argv[])
   options.set("opt:do_decompress", 1);
   options.set("opt:objective_mode", (unsigned int)pressio_search_mode_max);
   options.set("sz:error_bound_mode", REL);
+  options.set("sz:metric", "composite");
+  options.set("opt:metric", "composite");
+  options.set("composite:plugins", std::vector<std::string>{"time", "size", "error_stat"});
+  options.set("composite:names", std::vector<std::string>{"time", "size", "error_stat"});
+  options.set("composite:scripts", lua_scripts);
   if(compressor->set_options(options)) {
     std::cout << compressor->error_msg() << std::endl;
     exit(compressor->error_code());

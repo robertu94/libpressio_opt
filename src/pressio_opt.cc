@@ -105,8 +105,6 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       if(output_settings.empty()) return output_required();
 
       bool run_metrics = true;
-      auto metrics = get_metrics();
-      compressor->set_metrics(metrics);
 
       auto compress_thread_fn = [&run_metrics, &input_data,&output,this](pressio_search_results::input_type const& input_v) {
         if(run_metrics) search_metrics->begin_iter(input_v);

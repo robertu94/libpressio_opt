@@ -196,6 +196,7 @@ struct dist_gridsearch_search: public pressio_search_plugin {
 
     void set_name_impl(std::string const& new_name) override {
       search_method->set_name(new_name + "/" + search_method->prefix());
+      manager.set_name(new_name);
     }
 
 private:
@@ -268,8 +269,8 @@ private:
     compat::optional<pressio_search_results::output_type::value_type> target;
     double global_rel_tolerance = .1;
     pressio_distributed_manager manager = pressio_distributed_manager(
-        /*max_masters*/1,
-        /*max_ranks_per_worker*/pressio_distributed_manager::unlimited
+        /*max_ranks_per_worker*/pressio_distributed_manager::unlimited,
+        /*max_masters*/1
         );
 };
 
