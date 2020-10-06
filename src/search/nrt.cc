@@ -97,6 +97,10 @@ struct nrt_search: public pressio_search_plugin {
               task_manager.push(request);
             });
 
+      manager.bcast(best_results.inputs);
+      manager.bcast(best_results.output);
+      manager.bcast(best_results.status);
+      manager.bcast(best_results.msg);
       return best_results;
     }
 

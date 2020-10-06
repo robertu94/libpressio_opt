@@ -144,6 +144,10 @@ public:
         }
       });
 
+    manager.bcast(best_results.inputs);
+    manager.bcast(best_results.output);
+    manager.bcast(best_results.status);
+    manager.bcast(best_results.msg);
     return best_results;
   }
 

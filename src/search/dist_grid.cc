@@ -51,10 +51,8 @@ struct dist_gridsearch_search: public pressio_search_plugin {
             task_request_t const& task,
             distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager) {
             //set lower and upper bounds
-            auto grid_lower = lower_bound;
-            auto grid_upper = upper_bound;
-            grid_lower = std::get<0>(task);
-            grid_upper = std::get<1>(task);
+            auto grid_lower = std::get<0>(task);
+            auto grid_upper = std::get<1>(task);
 
             pressio_options options;
             options.set("opt:lower_bound", pressio_data(std::begin(grid_lower), std::end(grid_lower)));
@@ -113,27 +111,22 @@ struct dist_gridsearch_search: public pressio_search_plugin {
               task_manager.request_stop();
             }
           });
+      manager.bcast(best_results.inputs);
+      manager.bcast(best_results.output);
+      manager.bcast(best_results.status);
+      manager.bcast(best_results.msg);
       return best_results;
     }
 
     //configuration
     pressio_options get_options(pressio_options const& opt_module_settings) const override {
       pressio_options opts;
-      std::vector<std::string> inputs;
-      get(opt_module_settings, "opt:inputs", &inputs);
       
       //need to reconfigure because input size has changed
-      if(inputs.size() != lower_bound.size()) {
-        set(opts, "opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        set(opts, "opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        set(opts, "dist_gridsearch:num_bins",  pressio_data::empty(pressio_int32_dtype, {inputs.size()}));
-        set(opts, "dist_gridsearch:overlap_percentage",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-      } else {
-        set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
-        set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
-        set(opts, "dist_gridsearch:num_bins", pressio_data(std::begin(num_bins), std::end(num_bins)));
-        set(opts, "dist_gridsearch:overlap_percentage", pressio_data(std::begin(overlap_percentage), std::end(overlap_percentage)));
-      }
+      set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
+      set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
+      set(opts, "dist_gridsearch:num_bins", pressio_data(std::begin(num_bins), std::end(num_bins)));
+      set(opts, "dist_gridsearch:overlap_percentage", pressio_data(std::begin(overlap_percentage), std::end(overlap_percentage)));
       set(opts, "opt:target", target);
       set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
       opts.copy_from(manager.get_options());

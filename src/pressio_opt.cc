@@ -104,10 +104,13 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
     {
       if(output_settings.empty()) return output_required();
 
-      bool run_metrics = true;
+      bool run_search_metrics = true;
 
-      auto compress_thread_fn = [&run_metrics, &input_data,&output,this](pressio_search_results::input_type const& input_v) {
-        if(run_metrics) search_metrics->begin_iter(input_v);
+      auto compress_thread_fn = [&run_search_metrics, &input_data, &output,
+                                 this](pressio_search_results::input_type const&
+                                         input_v) {
+        if (run_search_metrics)
+          search_metrics->begin_iter(input_v);
 
         auto thread_compressor = compressor->clone();
         auto thread_output = pressio_data::clone(*output);
@@ -115,22 +118,31 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         //configure the compressor for this input
         auto settings = thread_compressor->get_options();
         for (int i = 0; i < input_v.size(); ++i) {
-           if(settings.cast_set(input_settings[i], input_v[i], pressio_conversion_explicit) != pressio_options_key_set) {
-             throw pressio_search_exception(std::string("failed to configure setting: ") + input_settings[i]);
-           }
+          if (settings.cast_set(input_settings[i], input_v[i],
+                                pressio_conversion_explicit) !=
+              pressio_options_key_set) {
+            throw pressio_search_exception(
+              std::string("failed to configure setting: ") + input_settings[i]);
+          }
         }
         if(thread_compressor->set_options(settings)) {
-             throw pressio_search_exception(std::string("failed to configure compressor: ") + thread_compressor->error_msg());
+          throw pressio_search_exception(
+            std::string("failed to configure compressor: ") +
+            thread_compressor->error_msg());
         }
 
         pressio_data decompressed;
         if(thread_compressor->compress(input_data, &thread_output)) {
-             throw pressio_search_exception(std::string("failed to compress data: ") + thread_compressor->error_msg());
+          throw pressio_search_exception(
+            std::string("failed to compress data: ") +
+            thread_compressor->error_msg());
         }
         if(do_decompress) {
           decompressed = pressio_data::owning(input_data->dtype(), input_data->dimensions());
           if(thread_compressor->decompress(&thread_output, &decompressed)) {
-             throw pressio_search_exception(std::string("failed to decompress data: ") + thread_compressor->error_msg());
+            throw pressio_search_exception(
+              std::string("failed to decompress data: ") +
+              thread_compressor->error_msg());
           }
         }
 
@@ -140,41 +152,54 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         for (auto const& output_setting : output_settings) {
           double result;
           if(metrics_results.find(output_setting) == metrics_results.end()) {
-               throw pressio_search_exception(std::string("metric does not exist: ") + output_setting);
+            throw pressio_search_exception(
+              std::string("metric does not exist: ") + output_setting);
           }
           if(metrics_results.cast(output_setting, &result, pressio_conversion_explicit) != pressio_options_key_set) {
-               throw pressio_search_exception(std::string("metric is not convertible to double: ") + output_setting);
+            throw pressio_search_exception(
+              std::string("metric is not convertible to double: ") +
+              output_setting);
           }
           results.push_back(result);
         }
 
-        if(run_metrics) search_metrics->end_iter(input_v, results);
+        if (run_search_metrics)
+          search_metrics->end_iter(input_v, results);
         return results;
       };
 
-      auto compress_fn = [&run_metrics, &input_data,&output,this](pressio_search_results::input_type const& input_v) {
-        if(run_metrics) search_metrics->begin_iter(input_v);
-
+      auto compress_fn = [&run_search_metrics, &input_data, &output, this](
+                           pressio_search_results::input_type const& input_v) {
+        if (run_search_metrics)
+          search_metrics->begin_iter(input_v);
 
         //configure the compressor for this input
         auto settings = compressor->get_options();
         for (int i = 0; i < input_v.size(); ++i) {
-           if(settings.cast_set(input_settings[i], input_v[i], pressio_conversion_explicit) != pressio_options_key_set) {
-             throw pressio_search_exception(std::string("failed to configure setting: ") + input_settings[i]);
-           }
+          if (settings.cast_set(input_settings[i], input_v[i],
+                                pressio_conversion_explicit) !=
+              pressio_options_key_set) {
+            throw pressio_search_exception(
+              std::string("failed to configure setting: ") + input_settings[i]);
+          }
         }
         if(compressor->set_options(settings)) {
-             throw pressio_search_exception(std::string("failed to configure compressor: ") + compressor->error_msg());
+          throw pressio_search_exception(
+            std::string("failed to configure compressor: ") +
+            compressor->error_msg());
         }
 
         pressio_data decompressed;
         if(compressor->compress(input_data, output)) {
-             throw pressio_search_exception(std::string("failed to compress data: ") + compressor->error_msg());
+          throw pressio_search_exception(
+            std::string("failed to compress data: ") + compressor->error_msg());
         }
         if(do_decompress) {
           decompressed = pressio_data::owning(input_data->dtype(), input_data->dimensions());
           if(compressor->decompress(output, &decompressed)) {
-             throw pressio_search_exception(std::string("failed to decompress data: ") + compressor->error_msg());
+            throw pressio_search_exception(
+              std::string("failed to decompress data: ") +
+              compressor->error_msg());
           }
         }
 
@@ -184,15 +209,19 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         for (auto const& output_setting : output_settings) {
           double result;
           if(metrics_results.find(output_setting) == metrics_results.end()) {
-               throw pressio_search_exception(std::string("metric does not exist: ") + output_setting);
+            throw pressio_search_exception(
+              std::string("metric does not exist: ") + output_setting);
           }
           if(metrics_results.cast(output_setting, &result, pressio_conversion_explicit) != pressio_options_key_set) {
-               throw pressio_search_exception(std::string("metric is not convertible to double: ") + output_setting);
+            throw pressio_search_exception(
+              std::string("metric is not convertible to double: ") +
+              output_setting);
           }
           results.push_back(result);
         }
 
-        if(run_metrics) search_metrics->end_iter(input_v, results);
+        if (run_search_metrics)
+          search_metrics->end_iter(input_v, results);
         return results;
       };
 
@@ -202,7 +231,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         last_results = search->search(compress_thread_fn, token);
         search_metrics->end_search(last_results->inputs, last_results->output);
         //set metrics results to the results metrics
-        run_metrics = false;
+        run_search_metrics = false;
         compress_fn(last_results->inputs);
         if(last_results->status) return set_error(last_results->status, last_results->msg);
         return 0;

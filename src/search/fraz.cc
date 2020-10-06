@@ -134,19 +134,10 @@ struct fraz_search: public pressio_search_plugin {
     //configuration
     pressio_options get_options(pressio_options const& opt_module_settings) const override {
       pressio_options opts;
-      std::vector<std::string> inputs;
-      get(opt_module_settings, "opt:inputs", &inputs);
-      
+
       //need to reconfigure because input size has changed
-      if(inputs.size() != prediction.size()) {
-        set(opts, "opt:prediction",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        set(opts, "opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        set(opts, "opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-      } else {
-        set(opts, "opt:prediction", pressio_data(std::begin(prediction), std::end(prediction)));
-        set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
-        set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
-      }
+      set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
+      set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
       set(opts, "opt:max_iterations", max_iterations);
       set(opts, "opt:max_seconds", max_seconds);
       set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
@@ -158,10 +149,6 @@ struct fraz_search: public pressio_search_plugin {
     }
     int set_options(pressio_options const& options) override {
       pressio_data data;
-      if(get(options, "opt:prediction", &data) == pressio_options_key_set) {
-        prediction = data.to_vector<pressio_search_results::input_element_type>();
-        if(prediction.size() > 1) return 1;
-      }
       if(get(options, "opt:lower_bound", &data) == pressio_options_key_set) {
         lower_bound = data.to_vector<pressio_search_results::input_element_type>();
       }
@@ -175,12 +162,7 @@ struct fraz_search: public pressio_search_plugin {
       get(options, "opt:target", &target);
       get(options, "opt:thread_safe", &thread_safe);
       get(options, "fraz:nthreads", &nthreads);
-
-      unsigned int tmp_mode;
-      if(get(options, "opt:objective_mode", &tmp_mode) == pressio_options_key_set) {
-        if(tmp_mode != pressio_search_mode_none) mode = tmp_mode;
-        else return 1;
-      }
+      get(options, "opt:objective_mode", &mode);
 
       return 0;
     }
@@ -215,7 +197,6 @@ struct fraz_search: public pressio_search_plugin {
     }
 
 private:
-    pressio_search_results::input_type prediction{};
     pressio_search_results::input_type lower_bound{};
     pressio_search_results::input_type upper_bound{};
     compat::optional<pressio_search_results::output_type::value_type> target{};

@@ -72,7 +72,6 @@ struct guess_first_search: public pressio_search_plugin {
       get(options, "opt:target", &target);
       get(options, "opt:objective_mode", &mode);
       get_meta(options, "guess_first:search", search_plugins(), search_method_str, search_method);
-      search_method->set_options(options);
       return 0;
     }
 
