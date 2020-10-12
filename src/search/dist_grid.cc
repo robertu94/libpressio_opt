@@ -199,9 +199,6 @@ private:
 
     std::vector<task_request_t> build_task_list() {
       std::vector<task_request_t> tasks;
-      //for now just build the task list based on the first element.
-      //we need improvements to LibDistributed before we can do more than this
-      //in a general way.
       std::vector<double> step(lower_bound.size());
       std::vector<double> overlap(lower_bound.size());
       for (size_t dim = 0; dim < lower_bound.size(); ++dim) {

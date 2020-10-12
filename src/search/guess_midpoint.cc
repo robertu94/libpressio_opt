@@ -31,26 +31,17 @@ struct guess_midpoint_search: public pressio_search_plugin {
     //configuration
     pressio_options get_options(pressio_options const& opt_module_settings) const override {
       pressio_options opts;
-      std::vector<std::string> inputs;
-      opt_module_settings.get("opt:inputs", &inputs);
-      
-      //need to reconfigure because input size has changed
-      if(inputs.size() != lower_bound.size()) {
-        set(opts, "opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        set(opts, "opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-      } else {
-        set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
-        set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
-      }
+      set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
+      set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
       return opts;
     }
 
     int set_options(pressio_options const& options) override {
       pressio_data data;
-      if(options.get("opt:lower_bound", &data) == pressio_options_key_set) {
+      if(get(options, "opt:lower_bound", &data) == pressio_options_key_set) {
         lower_bound = data.to_vector<pressio_search_results::input_element_type>();
       }
-      if(options.get("opt:upper_bound", &data) == pressio_options_key_set) {
+      if(get(options, "opt:upper_bound", &data) == pressio_options_key_set) {
         upper_bound = data.to_vector<pressio_search_results::input_element_type>();
       }
       return 0;
@@ -59,7 +50,7 @@ struct guess_midpoint_search: public pressio_search_plugin {
     //meta-data
     /** get the prefix used by this compressor for options */
     const char* prefix() const override {
-      return "guess";
+      return "guess_midpoint";
     }
 
     /** get a version string for the compressor
