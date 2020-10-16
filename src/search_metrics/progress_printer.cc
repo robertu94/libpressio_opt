@@ -3,8 +3,12 @@
 #include <string>
 #include <sstream>
 #include "pressio_search_metrics.h"
+#include "pressio_search_results.h"
 #include <libpressio_ext/compat/memory.h>
 #include <mpi.h>
+#include <mutex>
+
+std::mutex printer_mutex;
 
 struct progress_printer : public pressio_search_metrics_plugin {
 
@@ -26,6 +30,7 @@ struct progress_printer : public pressio_search_metrics_plugin {
   }
 
   void end_iter(pressio_search_results::input_type const& input, pressio_search_results::output_type const& out) override {
+    std::lock_guard<std::mutex> guard(printer_mutex);
     std::cout << "rank={" << rank_str << "} iter={" << iteration << "} input={";
     format(std::cout, input);
     std::cout << "} output={";
@@ -35,6 +40,7 @@ struct progress_printer : public pressio_search_metrics_plugin {
   }
 
   void end_search(pressio_search_results::input_type const& input, pressio_search_results::output_type const& out) override {
+    std::lock_guard<std::mutex> guard(printer_mutex);
     format(format(std::cout << "final_iter={" << iteration << "} inputs={",  input) << "} output={", out) << '}' << std::endl;
   }
 

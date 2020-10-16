@@ -47,15 +47,8 @@ struct guess_first_search: public pressio_search_plugin {
     //configuration
     pressio_options get_options(pressio_options const& opt_module_settings) const override {
       pressio_options opts;
-      std::vector<std::string> inputs;
-      opt_module_settings.get("opt:inputs", &inputs);
       
-      //need to reconfigure because input size has changed
-      if(inputs.size() != input.size()) {
-        set(opts, "opt:prediction",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-      } else {
-        set(opts, "opt:prediction", pressio_data(std::begin(input), std::end(input)));
-      }
+      set(opts, "opt:prediction", pressio_data(std::begin(input), std::end(input)));
       set(opts, "opt:target", target);
       set(opts, "opt:objective_mode", mode);
       set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
