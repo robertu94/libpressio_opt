@@ -26,7 +26,7 @@ struct record_search : public pressio_search_metrics_plugin {
     iterations++;
   }
 
-  void end_search(pressio_search_results::input_type const& input, pressio_search_results::output_type const& out) override {
+  void end_search(pressio_search_results::input_type const&, pressio_search_results::output_type const&) override {
     const int size=manager.comm_size(), rank=manager.comm_rank();
     if(rank == 0) {
       //first collect the results on the master process

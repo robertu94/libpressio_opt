@@ -46,6 +46,7 @@ public:
         best_objective = std::numeric_limits<
           pressio_search_results::output_type::value_type>::max();
         break;
+      default:
       case pressio_search_mode_target:
         best_objective = std::numeric_limits<
           pressio_search_results::output_type::value_type>::max();
@@ -89,7 +90,7 @@ public:
 
     manager.work_queue(
       std::begin(inital_points), std::end(inital_points),
-      [this, &compress_fn](task_request_t const& request) {
+      [&compress_fn](task_request_t const& request) {
         auto const& inputs = std::get<0>(request);
         pressio_search_results::output_type result = compress_fn(inputs);
         return task_response_t{ inputs, result };
@@ -152,35 +153,20 @@ public:
   }
 
   // configuration
-  pressio_options get_options(
-    pressio_options const& opt_module_settings) const override
+  pressio_options get_options() const override
   {
     pressio_options opts;
-    std::vector<std::string> inputs;
-    opt_module_settings.get("opt:inputs", &inputs);
 
     // need to reconfigure because input size has changed
-    if (inputs.size() != prediction.size()) {
-      opts.set("opt:prediction",
-               pressio_data::empty(pressio_double_dtype, { inputs.size() }));
-      opts.set("opt:lower_bound",
-               pressio_data::empty(pressio_double_dtype, { inputs.size() }));
-      opts.set("opt:upper_bound",
-               pressio_data::empty(pressio_double_dtype, { inputs.size() }));
-    } else {
-      opts.set("opt:prediction",
-               pressio_data(std::begin(prediction), std::end(prediction)));
-      opts.set("opt:lower_bound",
-               pressio_data(std::begin(lower_bound), std::end(lower_bound)));
-      opts.set("opt:upper_bound",
-               pressio_data(std::begin(upper_bound), std::end(upper_bound)));
-    }
-    opts.set("opt:max_iterations", max_iterations);
-    opts.set("opt:max_seconds", max_seconds);
-    opts.set("opt:target", target);
-    opts.set("opt:objective_mode", mode);
+    set(opts, "opt:prediction", pressio_data(std::begin(prediction), std::end(prediction)));
+    set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
+    set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
+    set(opts, "opt:max_iterations", max_iterations);
+    set(opts, "opt:max_seconds", max_seconds);
+    set(opts, "opt:target", target);
+    set(opts, "opt:objective_mode", mode);
     opts.copy_from(manager.get_options());
-    opts.set("random:seed", seed);
+    set(opts,"random:seed", seed);
     return opts;
   }
   int set_options(pressio_options const& options) override

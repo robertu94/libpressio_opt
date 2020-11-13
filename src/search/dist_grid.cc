@@ -119,7 +119,7 @@ struct dist_gridsearch_search: public pressio_search_plugin {
     }
 
     //configuration
-    pressio_options get_options(pressio_options const& opt_module_settings) const override {
+    pressio_options get_options() const override {
       pressio_options opts;
       
       //need to reconfigure because input size has changed
@@ -130,7 +130,7 @@ struct dist_gridsearch_search: public pressio_search_plugin {
       set(opts, "opt:target", target);
       set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
       opts.copy_from(manager.get_options());
-      set_meta(opts, "dist_gridsearch:search", search_method_str, search_method, opts);
+      set_meta(opts, "dist_gridsearch:search", search_method_str, search_method);
       set(opts, "opt:objective_mode", mode);
 
       return opts;
@@ -212,8 +212,6 @@ private:
       std::vector<size_t> bin(lower_bound.size(), 0);
       bool done = false;
       size_t idx = 0;
-      size_t configs = 0;
-      int rank;
       while(!done) {
 
         std::vector<double> grid_lower(lower_bound.size());

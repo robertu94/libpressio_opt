@@ -40,18 +40,6 @@ struct pressio_search_plugin : public pressio_versionable, public pressio_config
         distributed::queue::StopToken& stop_token
         )=0;
 
-    //configuration
-    /**
-     * get the runtime settings of the search module 
-     *
-     * \param[in] opt_module_settings the settings determined by the opt
-     * compressor module, at minimum input (of type const char*[]) and output
-     * (of type const char*)
-     *
-     * \returns the options for this search module
-     */
-    virtual pressio_options get_options(pressio_options const& opt_module_settings) const=0;
-
     /**
      * \returns a clone of the current search object
      */

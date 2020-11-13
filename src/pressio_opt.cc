@@ -55,7 +55,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       set_type(options, "opt:objective_mode_name", pressio_option_charptr_type);
       set_meta(options, "opt:compressor", compressor_method, compressor);
       set_meta(options, "opt:search_metrics", search_metrics_method, search_metrics);
-      set_meta(options, "opt:search", search_method, search, options);
+      set_meta(options, "opt:search", search_method, search);
       return options;
     }
 
@@ -99,25 +99,23 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       return 0;
     }
 
-    int compress_impl(const pressio_data* input_data,
-                      struct pressio_data* output) override
+    int compress_many_impl(compat::span<const pressio_data* const> const& input_datas,
+                      compat::span<struct pressio_data*>& outputs) override
     {
       if(output_settings.empty()) return output_required();
 
       bool run_search_metrics = true;
 
-      auto compress_thread_fn = [&run_search_metrics, &input_data, &output,
+      auto common_compress_thread_fn = [&run_search_metrics, &input_datas,
                                  this](pressio_search_results::input_type const&
-                                         input_v) {
+                                         input_v, pressio_compressor& thread_compressor, compat::span<pressio_data*>& thread_outputs) {
         if (run_search_metrics)
           search_metrics->begin_iter(input_v);
 
-        auto thread_compressor = compressor->clone();
-        auto thread_output = pressio_data::clone(*output);
 
         //configure the compressor for this input
         auto settings = thread_compressor->get_options();
-        for (int i = 0; i < input_v.size(); ++i) {
+        for (size_t i = 0; i < input_v.size(); ++i) {
           if (settings.cast_set(input_settings[i], input_v[i],
                                 pressio_conversion_explicit) !=
               pressio_options_key_set) {
@@ -132,14 +130,38 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         }
 
         pressio_data decompressed;
-        if(thread_compressor->compress(input_data, &thread_output)) {
+        if(thread_compressor->compress_many(
+              input_datas.data(),
+              input_datas.data()+input_datas.size(),
+              thread_outputs.data(),
+              thread_outputs.data()+thread_outputs.size())) {
           throw pressio_search_exception(
             std::string("failed to compress data: ") +
             thread_compressor->error_msg());
         }
+
         if(do_decompress) {
-          decompressed = pressio_data::owning(input_data->dtype(), input_data->dimensions());
-          if(thread_compressor->decompress(&thread_output, &decompressed)) {
+          std::vector<pressio_data> decompressed;
+          std::vector<pressio_data*> decompressed_ptrs;
+          std::transform(
+              std::begin(input_datas),
+              std::end(input_datas),
+              std::back_inserter(decompressed),
+              [](const pressio_data * input_data) {
+                return pressio_data::owning(input_data->dtype(), input_data->dimensions());
+              });
+          std::transform(
+              std::begin(decompressed),
+              std::end(decompressed),
+              std::back_inserter(decompressed_ptrs),
+              [](pressio_data& decompressed) {
+                return &decompressed;
+              });
+          if(thread_compressor->decompress_many(
+                thread_outputs.data(),
+                thread_outputs.data()+thread_outputs.size(),
+                decompressed_ptrs.data(),
+                decompressed_ptrs.data()+decompressed_ptrs.size())) {
             throw pressio_search_exception(
               std::string("failed to decompress data: ") +
               thread_compressor->error_msg());
@@ -168,61 +190,27 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         return results;
       };
 
-      auto compress_fn = [&run_search_metrics, &input_data, &output, this](
+      auto compress_thread_fn = [&outputs, &common_compress_thread_fn,
+                                 this](pressio_search_results::input_type const&
+                                         input_v) {
+        pressio_compressor thread_compressor = compressor->clone();
+        std::vector<pressio_data> thread_outputs;
+        std::vector<pressio_data*> thread_outputs_ptrs;
+        std::transform(std::begin(outputs), std::end(outputs), std::back_inserter(thread_outputs),
+            [](pressio_data* data) {
+              return pressio_data::clone(*data);
+            });
+        std::transform(std::begin(thread_outputs), std::end(thread_outputs), std::back_inserter(thread_outputs_ptrs),
+            [](pressio_data& data) {
+              return &data;
+            });
+        compat::span<pressio_data*> thread_outputs_ptrs_span (thread_outputs_ptrs.data(), thread_outputs_ptrs.data()+thread_outputs_ptrs.size());
+        return common_compress_thread_fn(input_v, thread_compressor, thread_outputs_ptrs_span);
+      };
+
+      auto compress_fn = [&outputs, &common_compress_thread_fn, this](
                            pressio_search_results::input_type const& input_v) {
-        if (run_search_metrics)
-          search_metrics->begin_iter(input_v);
-
-        //configure the compressor for this input
-        auto settings = compressor->get_options();
-        for (int i = 0; i < input_v.size(); ++i) {
-          if (settings.cast_set(input_settings[i], input_v[i],
-                                pressio_conversion_explicit) !=
-              pressio_options_key_set) {
-            throw pressio_search_exception(
-              std::string("failed to configure setting: ") + input_settings[i]);
-          }
-        }
-        if(compressor->set_options(settings)) {
-          throw pressio_search_exception(
-            std::string("failed to configure compressor: ") +
-            compressor->error_msg());
-        }
-
-        pressio_data decompressed;
-        if(compressor->compress(input_data, output)) {
-          throw pressio_search_exception(
-            std::string("failed to compress data: ") + compressor->error_msg());
-        }
-        if(do_decompress) {
-          decompressed = pressio_data::owning(input_data->dtype(), input_data->dimensions());
-          if(compressor->decompress(output, &decompressed)) {
-            throw pressio_search_exception(
-              std::string("failed to decompress data: ") +
-              compressor->error_msg());
-          }
-        }
-
-        auto metrics_results = compressor->get_metrics_results();
-
-        std::vector<double> results;
-        for (auto const& output_setting : output_settings) {
-          double result;
-          if(metrics_results.find(output_setting) == metrics_results.end()) {
-            throw pressio_search_exception(
-              std::string("metric does not exist: ") + output_setting);
-          }
-          if(metrics_results.cast(output_setting, &result, pressio_conversion_explicit) != pressio_options_key_set) {
-            throw pressio_search_exception(
-              std::string("metric is not convertible to double: ") +
-              output_setting);
-          }
-          results.push_back(result);
-        }
-
-        if (run_search_metrics)
-          search_metrics->end_iter(input_v, results);
-        return results;
+        return common_compress_thread_fn(input_v, compressor, outputs);
       };
 
       try {
@@ -240,9 +228,22 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       }
 
     }
+    int compress_impl(const pressio_data *input, struct pressio_data* output) override {
+      const compat::span<pressio_data const*const> inputs(&input, 1);
+      compat::span<pressio_data*> outputs(&output, 1);
+      return compress_many_impl(inputs, outputs);
+    }
 
     int decompress_impl(const pressio_data *input, struct pressio_data* output) override {
       return compressor->decompress(input, output);
+    }
+    int decompress_many_impl(const compat::span<pressio_data const*const>& inputs, compat::span<struct pressio_data*>& outputs) override {
+      return compressor->decompress_many(
+          inputs.data(),
+          inputs.data()+inputs.size(),
+          outputs.data(),
+          outputs.data()+outputs.size()
+          );
     }
 
     int major_version() const override {

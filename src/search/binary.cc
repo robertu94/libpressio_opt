@@ -74,21 +74,13 @@ struct binary_search: public pressio_search_plugin {
     }
 
     //configuration
-    virtual pressio_options get_options(pressio_options const& opt_module_settings) const override {
+    virtual pressio_options get_options() const override {
       pressio_options opts;
-      std::vector<std::string> inputs;
-      get(opt_module_settings, "opt:inputs", &inputs);
       
       //need to reconfigure because input size has changed
-      if(inputs.size() != prediction.size()) {
-        set(opts, "opt:prediction",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        set(opts, "opt:lower_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-        set(opts, "opt:upper_bound",  pressio_data::empty(pressio_double_dtype, {inputs.size()}));
-      } else {
-        set(opts, "opt:prediction", pressio_data(std::begin(prediction), std::end(prediction)));
-        set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(prediction)));
-        set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
-      }
+      set(opts, "opt:prediction", pressio_data(std::begin(prediction), std::end(prediction)));
+      set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(prediction)));
+      set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
       set(opts, "opt:max_iterations", max_iterations);
       set(opts, "opt:max_seconds", max_seconds);
       set(opts, "opt:global_rel_tolerance", global_rel_tolerance);

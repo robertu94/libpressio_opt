@@ -12,23 +12,23 @@ namespace {
       if(value < low) return low;
       if(high < value) return high;
       return value;
-    };
+    }
     auto loss(double target, double actual){
       return clamp(pow((target-actual),2),
           std::numeric_limits<double>::min() * 1e-10,
           std::numeric_limits<double>::max() * 1e-10
           );
-    };
+    }
     auto vector_to_dlib(pressio_search_results::input_type const& input) {
       dlib::matrix<double,0,1> output(input.size());
       std::copy(std::begin(input), std::end(input), std::begin(output));
 
       return output;
-    };
+    }
     auto dlib_to_vector(dlib::matrix<double,0,1> const& input) {
       pressio_search_results::input_type output(input.begin(), input.end());
       return output;
-    };
+    }
 }
 
 struct fraz_search: public pressio_search_plugin {
@@ -78,7 +78,7 @@ struct fraz_search: public pressio_search_plugin {
         case pressio_search_mode_max:
         case pressio_search_mode_min:
           {
-            auto fraz = [&cache, &compress_fn, this](dlib::matrix<double,0,1> const& input){
+            auto fraz = [&cache, &compress_fn](dlib::matrix<double,0,1> const& input){
               auto const vec = dlib_to_vector(input);
               auto const result = compress_fn(vec);
               cache[vec] = result;
@@ -132,7 +132,7 @@ struct fraz_search: public pressio_search_plugin {
     }
 
     //configuration
-    pressio_options get_options(pressio_options const& opt_module_settings) const override {
+    pressio_options get_options() const override {
       pressio_options opts;
 
       //need to reconfigure because input size has changed

@@ -25,6 +25,7 @@ struct guess_first_search: public pressio_search_plugin {
               stop_token.request_stop();
               return results;
             }
+            break;
           }
         case pressio_search_mode_min:
           {
@@ -32,6 +33,7 @@ struct guess_first_search: public pressio_search_plugin {
               stop_token.request_stop();
               return results;
             }
+            break;
           }
         case pressio_search_mode_max:
           {
@@ -39,20 +41,23 @@ struct guess_first_search: public pressio_search_plugin {
               stop_token.request_stop();
               return results;
             }
+            break;
           }
+        default:
+          break;
       }
       return search_method->search(compress_fn, stop_token);
     }
 
     //configuration
-    pressio_options get_options(pressio_options const& opt_module_settings) const override {
+    pressio_options get_options() const override {
       pressio_options opts;
       
       set(opts, "opt:prediction", pressio_data(std::begin(input), std::end(input)));
       set(opts, "opt:target", target);
       set(opts, "opt:objective_mode", mode);
       set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
-      set_meta(opts, "guess_first:search", search_method_str, search_method, opts);
+      set_meta(opts, "guess_first:search", search_method_str, search_method);
 
       return opts;
     }

@@ -29,7 +29,7 @@ struct guess_midpoint_search: public pressio_search_plugin {
     }
 
     //configuration
-    pressio_options get_options(pressio_options const& opt_module_settings) const override {
+    pressio_options get_options() const override {
       pressio_options opts;
       set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
       set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));

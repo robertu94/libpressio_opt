@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libpressio_opt VERSION "0.5.2" LANGUAGES C CXX)
+project(libpressio_opt VERSION "0.6.0" LANGUAGES C CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/
@@ -63,6 +63,11 @@ target_include_directories(
 target_link_libraries(libpressio_opt PUBLIC LibDistributed::libdistributed
   LibPressio::libpressio PRIVATE dlib::dlib )
 target_compile_features(libpressio_opt PUBLIC cxx_std_${LIBPRESSIO_OPT_CXX_VERSION})
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/libpressio_opt.pc.in
+  ${CMAKE_CURRENT_BINARY_DIR}/libpressio_opt.pc
+  @ONLY
+  )
 
 option(USE_CLANG_TIDY "include clang-tidy warnings in the build log" OFF)
 if(USE_CLANG_TIDY)
@@ -80,6 +85,7 @@ install(TARGETS libpressio_opt EXPORT LibPressioOptConfig
   )
 install(EXPORT LibPressioOptConfig NAMESPACE LibPressioOpt:: DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/LibPressioOpt/cmake)
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libpressio_opt)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libpressio_opt.pc DESTINATION ${CMAKE_INSTALL_PREFIX}/share/pkgconfig)
 
 option(BUILD_DOCS "build the documetation" OFF)
 if(BUILD_DOCS)
