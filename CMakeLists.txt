@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libpressio_opt VERSION "0.6.0" LANGUAGES C CXX)
+project(libpressio_opt VERSION "0.7.0" LANGUAGES C CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/
@@ -29,6 +29,7 @@ find_package(LibPressio REQUIRED)
 find_package(MPI REQUIRED COMPONENTS CXX)
 find_package(LibDistributed REQUIRED)
 find_package(dlib REQUIRED)
+find_package(std_compat REQUIRED)
 find_package(PkgConfig)
 find_package(Threads)
 
@@ -60,7 +61,7 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libpressio_opt>
   )
-target_link_libraries(libpressio_opt PUBLIC LibDistributed::libdistributed
+target_link_libraries(libpressio_opt PUBLIC LibDistributed::libdistributed std_compat::std_compat
   LibPressio::libpressio PRIVATE dlib::dlib )
 target_compile_features(libpressio_opt PUBLIC cxx_std_${LIBPRESSIO_OPT_CXX_VERSION})
 configure_file(

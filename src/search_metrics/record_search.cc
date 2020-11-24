@@ -5,7 +5,7 @@
 #include <libpressio_ext/cpp/pressio.h>
 #include <type_traits>
 #include <vector>
-#include <libpressio_ext/compat/memory.h>
+#include <std_compat/memory.h>
 #include <libpressio_ext/cpp/distributed_manager.h>
 
 struct record_search : public pressio_search_metrics_plugin {

@@ -5,7 +5,7 @@
 #include <libpressio_ext/cpp/pressio.h>
 #include <memory>
 #include <vector>
-#include <libpressio_ext/compat/memory.h>
+#include <std_compat/memory.h>
 
 struct composite_search_metrics : public pressio_search_metrics_plugin {
   void begin_search() override {

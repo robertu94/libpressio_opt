@@ -2,7 +2,7 @@
 #include "pressio_search_results.h"
 #include "pressio_search_defines.h"
 #include <libdistributed_work_queue.h>
-#include <libpressio_ext/compat/memory.h>
+#include <std_compat/memory.h>
 #include <libpressio_ext/cpp/distributed_manager.h>
 
 namespace {

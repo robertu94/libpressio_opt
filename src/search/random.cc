@@ -9,7 +9,7 @@
 #include <random>
 #include <time.h>
 #include <mpi.h>
-#include <libpressio_ext/compat/memory.h>
+#include <std_compat/memory.h>
 #include <libpressio_ext/cpp/distributed_manager.h>
 
 namespace {

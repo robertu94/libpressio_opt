@@ -4,7 +4,7 @@
 #include <sstream>
 #include "pressio_search_metrics.h"
 #include "pressio_search_results.h"
-#include <libpressio_ext/compat/memory.h>
+#include <std_compat/memory.h>
 #include <mpi.h>
 #include <mutex>
 

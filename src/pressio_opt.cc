@@ -14,7 +14,7 @@
 #include "pressio_search.h"
 #include "pressio_search_metrics.h"
 #include "pressio_search_defines.h"
-#include <libpressio_ext/compat/memory.h>
+#include <std_compat/memory.h>
 
 namespace {
   template <class Registry>

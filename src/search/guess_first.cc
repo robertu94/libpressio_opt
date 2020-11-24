@@ -2,7 +2,7 @@
 #include "pressio_search_results.h"
 #include "pressio_search_defines.h"
 #include <libpressio_ext/cpp/pressio.h>
-#include <libpressio_ext/compat/memory.h>
+#include <std_compat/memory.h>
 
 struct guess_first_search: public pressio_search_plugin {
   public:

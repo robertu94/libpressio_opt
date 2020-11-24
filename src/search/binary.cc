@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <chrono>
 #include "pressio_search.h"
-#include <libpressio_ext/compat/std_compat.h>
+#include <std_compat/std_compat.h>
 
 struct binary_search: public pressio_search_plugin {
   public:

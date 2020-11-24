@@ -4,7 +4,7 @@
 #include "pressio_search.h"
 #include "pressio_search_defines.h"
 #include "pressio_search_results.h"
-#include <libpressio_ext/compat/memory.h>
+#include <std_compat/memory.h>
 
 namespace {
     auto clamp(double value, double low, double high) {

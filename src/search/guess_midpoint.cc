@@ -1,7 +1,7 @@
 #include "pressio_search.h"
 #include "pressio_search_results.h"
-#include <libpressio_ext/compat/numeric.h>
-#include <libpressio_ext/compat/memory.h>
+#include <std_compat/numeric.h>
+#include <std_compat/memory.h>
 #include <algorithm>
 
 struct guess_midpoint_search: public pressio_search_plugin {
