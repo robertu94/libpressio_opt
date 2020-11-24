@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libpressio_opt VERSION "0.7.0" LANGUAGES C CXX)
+project(libpressio_opt VERSION "0.7.1" LANGUAGES C CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/
@@ -16,12 +16,6 @@ include(CTest)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BUILD_SHARED_LIBS "build libraries as shared" ON)
 
-set(default_cxx_standard 17)
-if(NOT LIBPRESSIO_OPT_CXX_VERSION)
-  set(LIBPRESSIO_OPT_CXX_VERSION ${default_cxx_standard} CACHE 
-    STRING "Which version of the cxx standard to expect" FORCE)
-  set_property(CACHE LIBPRESSIO_OPT_CXX_VERSION PROPERTY STRINGS 17 20)
-endif()
 
 include(GNUInstallDirs)
 
@@ -63,7 +57,6 @@ target_include_directories(
   )
 target_link_libraries(libpressio_opt PUBLIC LibDistributed::libdistributed std_compat::std_compat
   LibPressio::libpressio PRIVATE dlib::dlib )
-target_compile_features(libpressio_opt PUBLIC cxx_std_${LIBPRESSIO_OPT_CXX_VERSION})
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/libpressio_opt.pc.in
   ${CMAKE_CURRENT_BINARY_DIR}/libpressio_opt.pc

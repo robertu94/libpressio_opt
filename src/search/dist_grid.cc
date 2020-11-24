@@ -1,13 +1,14 @@
 #include "pressio_search.h"
 #include "pressio_search_results.h"
 #include "pressio_search_defines.h"
+#include <cmath>
 #include <libdistributed_work_queue.h>
 #include <std_compat/memory.h>
 #include <libpressio_ext/cpp/distributed_manager.h>
 
 namespace {
   auto loss(pressio_search_results::output_type::value_type target, pressio_search_results::output_type::value_type actual) {
-    return std::fabs(target-actual);
+    return fabs(target-actual);
   }
 }
 
