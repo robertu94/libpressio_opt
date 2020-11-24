@@ -58,7 +58,7 @@ public:
       return best_results;
     }
 
-    auto seed_s = std::seed_seq{seed.value_or(time(nullptr))};
+    auto seed_s = std::seed_seq{std::initializer_list<unsigned int>{seed.value_or(time(nullptr))}};
     std::default_random_engine gen{seed_s};
 
     auto point_generator = [this, &gen]() {

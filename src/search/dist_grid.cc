@@ -7,7 +7,7 @@
 
 namespace {
   auto loss(pressio_search_results::output_type::value_type target, pressio_search_results::output_type::value_type actual) {
-    return std::abs(target-actual);
+    return std::fabs(target-actual);
   }
 }
 
