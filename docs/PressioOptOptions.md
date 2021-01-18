@@ -27,17 +27,18 @@ The opt meta-compressor has a search algorithm.  The meta-compressor itself has 
 
 Additionally, there are several options which are common to each of the search algorithms.
 
-| option name               | type                                         | description |
-|---------------------------|----------------------------------------------|------------------------|
-|`distributed:mpi_comm`                 | `MPI_Comm`                                   | `MPI_Comm` passed to libdistributed |
-|`opt:lower_bound`          | `pressio_data` containing double[`n_inputs`] | the lower bound to search |
-|`opt:upper_bound`          | `pressio_data` containing double[`n_inputs`] | the upper bound to search |
-|`opt:target`               | double                                       | the target the user wants to achieve, meaning dependson opt:objective_mode |
-|`opt:local_rel_tolerance`  | double                                       | a parameter that controls how likely the searcher is to refine vs explore  |
-|`opt:global_rel_tolerance` | double                                       | a paremeter that specifies how close we must be to the target to early terminate if `opt:objective_mode==target` |
-|`opt:max_iterations`       | unsigned int                                 | the maximum number of iterations _per task_ |
-|`opt:prediction`           | `pressio_data` containing double[`n_inputs`] | the prediction to use |
-|`opt:objective_mode`       | unsigned int                                 | the type of search to preform (min -- find a min, max -- find a max, target -- get as close to a target as possible |
+| option name                | type                                                            | description                                                                                                         |
+|----------------------------|-----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| `distributed:mpi_comm`     | `MPI_Comm`                                                      | `MPI_Comm` passed to libdistributed                                                                                 |
+| `opt:lower_bound`          | `pressio_data` containing double[`n_inputs`]                    | the lower bound to search                                                                                           |
+| `opt:upper_bound`          | `pressio_data` containing double[`n_inputs`]                    | the upper bound to search                                                                                           |
+| `opt:target`               | double                                                          | the target the user wants to achieve, meaning dependson opt:objective_mode                                          |
+| `opt:local_rel_tolerance`  | double                                                          | a parameter that controls how likely the searcher is to refine vs explore                                           |
+| `opt:global_rel_tolerance` | double                                                          | a paremeter that specifies how close we must be to the target to early terminate if `opt:objective_mode==target`    |
+| `opt:max_iterations`       | unsigned int                                                    | the maximum number of iterations _per task_                                                                         |
+| `opt:prediction`           | `pressio_data` containing double[`n_inputs`]                    | the prediction to use                                                                                               |
+| `opt:evaluations`          | `pressio_data` containing double[`n_inputs` + 1, n_evaluations] | a set of N evaluations preformed early                                                                               |
+| `opt:objective_mode`       | unsigned int                                                    | the type of search to preform (min -- find a min, max -- find a max, target -- get as close to a target as possible |
 
 Each Searcher has some properties.  Their meanings are explained below:
 
@@ -143,6 +144,7 @@ FRaZ support the following kinds of common options:
 + `opt:prediction`
 + `opt:target`
 + `opt:upper_bound`
++ `opt:evaluations`
 
 FRaZ also supports the following specific options:
 

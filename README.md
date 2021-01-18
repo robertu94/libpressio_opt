@@ -26,6 +26,8 @@ See [Opt Configuration](@ref optoptions) for more information on the configurati
 + LibDistributed version 0.0.8 or later
 + LibPressio version 0.40.1 or later
 + An MPI implementation supporting MPI-3 or later.  Tested on OpenMPI 4.0.2
++ Dlib after commit `95271cfe43ffceeadeb1a73bf033794b501e86f4` (after release 19.21)
+
 
 
 ## Installing LibPressioOpt using Spack

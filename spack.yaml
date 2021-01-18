@@ -7,5 +7,5 @@ spack:
   specs: [libpressio~blosc~fpzip~hdf5~magick~mgard~petsc+lua,
     libdistributed ^ncurses+termlib,
     cmake,
-    dlib]
+    dlib@master]
   view: true

@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <limits>
-#include "impl/GlobalOptimization.h"
+#include "dlib/global_optimization/find_max_global.h"
 #include "pressio_search.h"
 #include "pressio_search_defines.h"
 #include "pressio_search_results.h"
@@ -25,9 +25,42 @@ namespace {
 
       return output;
     }
+    template <class ForwardIt>
+    auto iter_to_dlib(ForwardIt begin, ForwardIt end) {
+      dlib::matrix<double,0,1> output(std::distance(begin, end));
+      std::copy(begin, end, std::begin(output));
+      return output;
+    }
     auto dlib_to_vector(dlib::matrix<double,0,1> const& input) {
       pressio_search_results::input_type output(input.begin(), input.end());
       return output;
+    }
+
+    std::vector<dlib::function_evaluation> data_to_evaluations(pressio_data const& data, const size_t n_inputs) {
+      std::vector<dlib::function_evaluation> evaluations;
+      //if there are no evaluations, skip
+      if(data.num_dimensions() == 0 || (not data.has_data())) {
+        return evaluations;
+      }
+
+      if(data.num_dimensions() != 2) {
+        std::ostringstream err;
+        err << "invalid_dimensions: should be 2d but is " << data.num_dimensions();
+        throw std::runtime_error(err.str());
+      }
+      const size_t width = n_inputs + 1;
+      if(data.get_dimension(0) != width) {
+        std::ostringstream err;
+        err << "invalid_dimensions: dim[0] should be "  << width << " but is " << data.get_dimension(0);
+        throw std::runtime_error(err.str());
+      }
+      const double* ptr = static_cast<double*>(data.data());
+      for (size_t i = 0; i < data.get_dimension(1); ++i) {
+        evaluations.emplace_back(iter_to_dlib(ptr+(i*width), ptr+(i*width)+n_inputs), ptr[i*width+n_inputs]);
+      }
+
+
+      return evaluations;
     }
 }
 
@@ -42,6 +75,14 @@ struct fraz_search: public pressio_search_plugin {
       dlib::function_evaluation best_result;
       std::map<pressio_search_results::input_type, pressio_search_results::output_type> cache;
       dlib::thread_pool pool((thread_safe) ? (nthreads): (1));
+      std::vector<dlib::function_evaluation> evaluations;
+      try{
+        evaluations = data_to_evaluations(evaluations_data, lower_bound.size());
+      } catch(std::runtime_error const& err) {
+        results.msg = err.what();
+        results.status = -1;
+        return results;
+      }
 
       switch(mode) {
         case pressio_search_mode_target:
@@ -62,17 +103,39 @@ struct fraz_search: public pressio_search_plugin {
               cache[vec] = result;
               return loss(*target, result.front());
             };
+            bool skip = false;
+            best_result.y = std::numeric_limits<double>::max();
+            for (auto& eval : evaluations) {
+              //transform to optimization domain
+              eval.y = loss(*target, eval.y);
 
-            best_result = pressio_opt::find_min_global(
-                pool,
-                fraz,
-                vector_to_dlib(lower_bound),
-                vector_to_dlib(upper_bound),
-                pressio_opt::max_function_calls(max_iterations),
-                std::chrono::seconds(max_seconds),
-                local_tolerance,
-                pressio_opt::stop_condition(should_stop)
-                );
+              //cache the value
+              cache[dlib_to_vector(eval.x)] = {eval.y};
+
+              //check if we should stop because of evaluations
+              if(should_stop(eval.y)) {
+                skip = true;
+              }
+
+              //record the best result in the evaluations
+              if(eval.y < best_result.y) {
+                best_result = eval;
+              }
+            }
+
+            if(!skip) {
+              best_result = dlib::find_min_global(
+                  pool,
+                  fraz,
+                  vector_to_dlib(lower_bound),
+                  vector_to_dlib(upper_bound),
+                  dlib::max_function_calls(max_iterations),
+                  std::chrono::seconds(max_seconds),
+                  local_tolerance,
+                  evaluations,
+                  dlib::stop_condition(should_stop)
+                  );
+            }
             break;
           }
         case pressio_search_mode_max:
@@ -93,32 +156,74 @@ struct fraz_search: public pressio_search_plugin {
               if (target_achived) token.request_stop();
               return token.stop_requested() || target_achived;
             };
-            best_result = pressio_opt::find_min_global(
-                pool,
-                fraz,
-                vector_to_dlib(lower_bound),
-                vector_to_dlib(upper_bound),
-                pressio_opt::max_function_calls(max_iterations),
-                std::chrono::seconds(max_seconds),
-                local_tolerance,
-                pressio_opt::stop_condition(should_stop)
-                );
+
+            best_result.y = std::numeric_limits<double>::lowest();
+            bool skip = false;
+            for (auto& eval : evaluations) {
+              //put the value into the cache
+              cache[dlib_to_vector(eval.x)] = {eval.y};
+
+              //check if we should stop early based just on evaluations
+              if(should_stop(eval.y)) {
+                skip = true;
+              }
+
+              //record the best result
+              if(eval.y < best_result.y) {
+                best_result = eval;
+              }
+            }
+
+            if(!skip) {
+              best_result = dlib::find_min_global(
+                  pool,
+                  fraz,
+                  vector_to_dlib(lower_bound),
+                  vector_to_dlib(upper_bound),
+                  dlib::max_function_calls(max_iterations),
+                  std::chrono::seconds(max_seconds),
+                  local_tolerance,
+                  evaluations,
+                  dlib::stop_condition(should_stop)
+                  );
+            }
             } else {
             auto should_stop = [&token, this](double value) {
               bool target_achived = (target && value > *target);
               if (target_achived) token.request_stop();
               return token.stop_requested() || target_achived;
             };
-            best_result = pressio_opt::find_max_global(
-                pool,
-                fraz,
-                vector_to_dlib(lower_bound),
-                vector_to_dlib(upper_bound),
-                pressio_opt::max_function_calls(max_iterations),
-                std::chrono::seconds(max_seconds),
-                local_tolerance,
-                pressio_opt::stop_condition(should_stop)
-                );
+            best_result.y = std::numeric_limits<double>::max();
+            bool skip = false;
+
+            for (auto& eval : evaluations) {
+              //put the value into the cache
+              cache[dlib_to_vector(eval.x)] = {eval.y};
+
+              //check if we should stop early based just on evaluations
+              if(should_stop(eval.y)) {
+                skip = true;
+              }
+
+              //record the best result
+              if(eval.y > best_result.y) {
+                best_result = eval;
+              }
+            }
+
+            if(!skip) {
+              best_result = dlib::find_max_global(
+                  pool,
+                  fraz,
+                  vector_to_dlib(lower_bound),
+                  vector_to_dlib(upper_bound),
+                  dlib::max_function_calls(max_iterations),
+                  std::chrono::seconds(max_seconds),
+                  local_tolerance,
+                  evaluations,
+                  dlib::stop_condition(should_stop)
+                  );
+              }
             }
             break;
           }
@@ -145,6 +250,7 @@ struct fraz_search: public pressio_search_plugin {
       set(opts, "opt:target", target);
       set(opts, "opt:objective_mode", mode);
       set(opts, "fraz:nthreads", nthreads);
+      set(opts, "opt:evaluations", evaluations_data);
       return opts;
     }
     int set_options(pressio_options const& options) override {
@@ -163,6 +269,7 @@ struct fraz_search: public pressio_search_plugin {
       get(options, "opt:thread_safe", &thread_safe);
       get(options, "fraz:nthreads", &nthreads);
       get(options, "opt:objective_mode", &mode);
+      get(options, "opt:evaluations", &evaluations_data);
 
       return 0;
     }
@@ -177,7 +284,7 @@ struct fraz_search: public pressio_search_plugin {
      * \see pressio_compressor_version for the semantics this function should obey
      */
     const char* version() const override {
-      return "0.0.2";
+      return "0.0.3";
     }
     /** get the major version, default version returns 0
      * \see pressio_compressor_major_version for the semantics this function should obey
@@ -197,9 +304,11 @@ struct fraz_search: public pressio_search_plugin {
     }
 
 private:
+
     pressio_search_results::input_type lower_bound{};
     pressio_search_results::input_type upper_bound{};
     compat::optional<pressio_search_results::output_type::value_type> target{};
+    pressio_data evaluations_data;
     double local_tolerance = .01;
     double global_rel_tolerance = .1;
     unsigned int max_iterations = 100;
