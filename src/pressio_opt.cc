@@ -47,28 +47,40 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       search_metrics = search_metrics_plugins().build(search_metrics_method);
     }
 
+
+    struct pressio_options get_documentation_impl() const override {
+      struct pressio_options options;
+      set_meta_docs(options, "opt:compressor", "the compressor to optimize over", compressor);
+      set_meta_docs(options, "opt:search_metrics", "search metrics to collect", search_metrics);
+      set_meta_docs(options, "opt:search", "search method to use", search);
+      set(options, "pressio:description", "Uses optimization to automatically configure compressors");
+      set(options, "opt:objective_mode_name", "the name for the optimization method");
+      set(options, "opt:inputs", "list of input settings");
+      set(options, "opt:output", "list of output settings");
+      set(options, "opt:do_decompress", "preform decompression while tuning");
+      set(options, "opt:prediction", "guess of the optimal configuration");
+      return options;
+    }
     struct pressio_options get_options_impl() const override {
       struct pressio_options options;
-      set(options, "opt:inputs", input_settings);
-      set(options, "opt:output", output_settings);
-      set(options, "opt:do_decompress", do_decompress);
-      set_type(options, "opt:objective_mode_name", pressio_option_charptr_type);
       set_meta(options, "opt:compressor", compressor_method, compressor);
       set_meta(options, "opt:search_metrics", search_metrics_method, search_metrics);
       set_meta(options, "opt:search", search_method, search);
+      set_type(options, "opt:objective_mode_name", pressio_option_charptr_type);
+      set(options, "opt:inputs", input_settings);
+      set(options, "opt:output", output_settings);
+      set(options, "opt:do_decompress", do_decompress);
       return options;
     }
 
     struct pressio_options get_configuration_impl() const override {
       struct pressio_options options;
+      options.copy_from(compressor->get_configuration());
+      options.copy_from(search->get_configuration());
+      options.copy_from(search_metrics->get_configuration());
       set(options,"pressio:thread_safe", (int)pressio_thread_safety_single);
-      set(options,"opt:search_methods", get_registry_names(search_plugins()));
+      set(options,"opt:search", get_registry_names(search_plugins()));
       set(options,"opt:search_metrics", get_registry_names(search_metrics_plugins()));
-      auto compressor_configuration = compressor->get_configuration();
-      for (auto const& option : compressor_configuration) {
-        options.set(option.first, option.second);
-      }
-      
       return options;
     }
 
@@ -310,8 +322,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       int mpi_init=0;
       MPI_Initialized(&mpi_init);
 
-      int compressor_thread_safety=0;
-      compressor->get_configuration().get("pressio:thread_safe", &compressor_thread_safety);
+      int compressor_thread_safety = get_threadsafe(*compressor);
 
       if(mpi_init) {
         int mpi_thread_provided;
