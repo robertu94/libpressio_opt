@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libpressio_opt VERSION "0.9.0" LANGUAGES C CXX)
+project(libpressio_opt VERSION "0.10.0" LANGUAGES C CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/

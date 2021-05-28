@@ -115,6 +115,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
                       compat::span<struct pressio_data*>& outputs) override
     {
       if(output_settings.empty()) return output_required();
+      if(input_settings.empty()) return input_required();
 
       bool run_search_metrics = true;
 
@@ -124,6 +125,10 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         if (run_search_metrics)
           search_metrics->begin_iter(input_v);
 
+        if(input_v.size() != input_settings.size()) {
+            throw pressio_search_exception(
+              std::string("mismatched number of inputs inputs=") + std::to_string(input_v.size()) + " settings=" + std::to_string(input_settings.size()));
+        }
 
         //configure the compressor for this input
         auto settings = thread_compressor->get_options();
@@ -232,9 +237,12 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         search_metrics->end_search(last_results->inputs, last_results->output);
         //set metrics results to the results metrics
         run_search_metrics = false;
-        compress_fn(last_results->inputs);
-        if(last_results->status) return set_error(last_results->status, last_results->msg);
-        return 0;
+        if(last_results->status) {
+          return set_error(last_results->status, last_results->msg);
+        } else {
+          compress_fn(last_results->inputs);
+          return 0;
+        }
       } catch(pressio_search_exception const& e) {
         return set_error(2, e.what());
       }
@@ -337,6 +345,9 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
     }
     int invalid_search_plugin(std::string const& name) {
       return set_error(2, name + " unknown search plugin");
+    }
+    int input_required() {
+      return set_error(3, "opt:input is required to be set, but is not");
     }
 
     pressio library{};

@@ -91,10 +91,10 @@ struct fraz_search: public pressio_search_plugin {
                 loss(*target, *target*(1-global_rel_tolerance)),
                 loss(*target, *target*(1+global_rel_tolerance))
             );
-            auto should_stop = [threshold,&token](double value) {
+            auto should_stop = [threshold,&token,this](double value) {
               bool target_achived = value < threshold;
               if (target_achived) token.request_stop();
-              return target_achived || token.stop_requested();
+              return target_achived || (inter_iteration && token.stop_requested());
             };
 
             auto fraz = [&cache, &compress_fn, this](dlib::matrix<double,0,1> const& input){
@@ -154,7 +154,7 @@ struct fraz_search: public pressio_search_plugin {
             auto should_stop = [&token, this](double value) {
               bool target_achived = (target && value < *target);
               if (target_achived) token.request_stop();
-              return token.stop_requested() || target_achived;
+              return (inter_iteration && token.stop_requested()) || target_achived;
             };
 
             best_result.y = std::numeric_limits<double>::lowest();
@@ -191,7 +191,7 @@ struct fraz_search: public pressio_search_plugin {
             auto should_stop = [&token, this](double value) {
               bool target_achived = (target && value > *target);
               if (target_achived) token.request_stop();
-              return token.stop_requested() || target_achived;
+              return (inter_iteration && token.stop_requested())|| target_achived;
             };
             best_result.y = std::numeric_limits<double>::max();
             bool skip = false;
@@ -251,6 +251,7 @@ struct fraz_search: public pressio_search_plugin {
       set(opts, "opt:objective_mode", mode);
       set(opts, "fraz:nthreads", nthreads);
       set(opts, "opt:evaluations", evaluations_data);
+      set(opts, "opt:inter_iteration", inter_iteration);
       return opts;
     }
     int set_options(pressio_options const& options) override {
@@ -270,6 +271,7 @@ struct fraz_search: public pressio_search_plugin {
       get(options, "fraz:nthreads", &nthreads);
       get(options, "opt:objective_mode", &mode);
       get(options, "opt:evaluations", &evaluations_data);
+      get(options, "opt:inter_iteration", &inter_iteration);
 
       return 0;
     }
@@ -315,6 +317,7 @@ private:
     unsigned int max_seconds = std::numeric_limits<unsigned int>::max();
     unsigned int mode = pressio_search_mode_target;
     unsigned int nthreads = 1;
+    uint32_t inter_iteration = 1;
     int thread_safe = 0;
 };
 

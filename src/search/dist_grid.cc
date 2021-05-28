@@ -23,6 +23,9 @@ struct dist_gridsearch_search: public pressio_search_plugin {
         std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
         distributed::queue::StopToken& stop_token
         ) override {
+
+
+
       pressio_search_results best_results;
       pressio_search_results::output_type::value_type best_objective;
       switch(mode){
@@ -41,6 +44,16 @@ struct dist_gridsearch_search: public pressio_search_plugin {
         default:
           best_objective = 0;
           break;
+      }
+
+      if(num_bins.size() == 0) {
+        best_results.status = 1;
+        best_results.msg = "dist_gridsearch was not configured with non-empty bin sizes";
+        return best_results;
+      } else if(lower_bound.size() != upper_bound.size() || lower_bound.size() != num_bins.size()) {
+        best_results.status = 1;
+        best_results.msg = "dist_gridsearch was configured with lower_bounds, upper_bounds, or num_bins of different sizes";
+        return best_results;
       }
 
       auto tasks = build_task_list();
