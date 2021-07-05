@@ -84,6 +84,17 @@ struct fraz_search: public pressio_search_plugin {
         return results;
       }
 
+      std::vector<bool> is_integral;
+      if(is_integral_config.empty()) {
+        //use a default or all double
+        is_integral = std::vector<bool>(lower_bound.size(), false);
+
+      } else {
+        //use the actual is_integral value
+        is_integral = is_integral_config;
+      }
+
+
       switch(mode) {
         case pressio_search_mode_target:
           {
@@ -129,6 +140,7 @@ struct fraz_search: public pressio_search_plugin {
                   fraz,
                   vector_to_dlib(lower_bound),
                   vector_to_dlib(upper_bound),
+                  is_integral,
                   dlib::max_function_calls(max_iterations),
                   std::chrono::seconds(max_seconds),
                   local_tolerance,
@@ -180,6 +192,7 @@ struct fraz_search: public pressio_search_plugin {
                   fraz,
                   vector_to_dlib(lower_bound),
                   vector_to_dlib(upper_bound),
+                  is_integral,
                   dlib::max_function_calls(max_iterations),
                   std::chrono::seconds(max_seconds),
                   local_tolerance,
@@ -217,6 +230,7 @@ struct fraz_search: public pressio_search_plugin {
                   fraz,
                   vector_to_dlib(lower_bound),
                   vector_to_dlib(upper_bound),
+                  is_integral,
                   dlib::max_function_calls(max_iterations),
                   std::chrono::seconds(max_seconds),
                   local_tolerance,
@@ -243,6 +257,10 @@ struct fraz_search: public pressio_search_plugin {
       //need to reconfigure because input size has changed
       set(opts, "opt:lower_bound", pressio_data(std::begin(lower_bound), std::end(lower_bound)));
       set(opts, "opt:upper_bound", pressio_data(std::begin(upper_bound), std::end(upper_bound)));
+
+      std::vector<uint8_t> is_integral(is_integral_config.begin(), is_integral_config.end());
+      set(opts, "opt:is_integral", pressio_data(std::begin(is_integral), std::end(is_integral)));
+
       set(opts, "opt:max_iterations", max_iterations);
       set(opts, "opt:max_seconds", max_seconds);
       set(opts, "opt:global_rel_tolerance", global_rel_tolerance);
@@ -261,6 +279,13 @@ struct fraz_search: public pressio_search_plugin {
       }
       if(get(options, "opt:upper_bound", &data) == pressio_options_key_set) {
         upper_bound = data.to_vector<pressio_search_results::input_element_type>();
+      }
+      if(get(options, "opt:is_integral", &data) == pressio_options_key_set) {
+        auto is_integral_u8 = data.to_vector<uint8_t>();
+        is_integral_config = std::vector<bool>(
+            is_integral_u8.begin(),
+            is_integral_u8.end()
+            );
       }
       get(options, "opt:max_iterations", &max_iterations);
       get(options, "opt:max_seconds", &max_seconds);
@@ -309,6 +334,7 @@ private:
 
     pressio_search_results::input_type lower_bound{};
     pressio_search_results::input_type upper_bound{};
+    std::vector<bool> is_integral_config{};
     compat::optional<pressio_search_results::output_type::value_type> target{};
     pressio_data evaluations_data;
     double local_tolerance = .01;

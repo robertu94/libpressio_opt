@@ -14,6 +14,7 @@
 #include "pressio_search.h"
 #include "pressio_search_metrics.h"
 #include "pressio_search_defines.h"
+#include "libpressio_opt_version.h"
 #include <std_compat/memory.h>
 
 namespace {
@@ -97,9 +98,12 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         search_options.set(search->get_name(), "opt:objective_mode", mode);
         search_options.set_type(search->get_name(), "opt:objective_mode_name", pressio_option_charptr_type);
       }
-      search_options.set("opt:thread_safe", is_thread_safe());
 
       get_meta(search_options, "opt:compressor", compressor_plugins(), compressor_method, compressor);
+      //the search needs to know if the compressor is thread_safe, and can only
+      //check if that is true, after the compressor has been configured
+      search_options.set("opt:thread_safe", is_thread_safe());
+
       get_meta(search_options, "opt:search", search_plugins(), search_method, search);
       get_meta(search_options, "opt:search_metrics", search_metrics_plugins(), search_metrics_method, search_metrics);
       get(search_options, "opt:inputs", &input_settings);
@@ -267,17 +271,24 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
     }
 
     int major_version() const override {
-      return 0;
+      return LIBPRESSIO_OPT_MAJOR_VERSION;
     }
     int minor_version() const override {
-      return 0;
+      return LIBPRESSIO_OPT_MINOR_VERSION;
     }
     int patch_version() const override {
-      return 0;
+      return LIBPRESSIO_OPT_PATCH_VERSION;
     }
 
     const char* version() const override {
-      return "0.0.0";
+      static const std::string opt_version_str = []{
+        std::stringstream ss;
+        ss << LIBPRESSIO_OPT_MAJOR_VERSION << '.'
+           << LIBPRESSIO_OPT_MINOR_VERSION << '.'
+           << LIBPRESSIO_OPT_PATCH_VERSION;
+        return ss.str();
+      }();
+      return opt_version_str.c_str();
     }
 
     const char* prefix() const override {

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libpressio_opt VERSION "0.10.0" LANGUAGES C CXX)
+project(libpressio_opt VERSION "0.11.0" LANGUAGES C CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/
@@ -55,8 +55,17 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libpressio_opt>
   )
+target_include_directories(
+  libpressio_opt
+  PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+  )
 target_link_libraries(libpressio_opt PUBLIC LibDistributed::libdistributed std_compat::std_compat
   LibPressio::libpressio PRIVATE dlib::dlib )
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/libpressio_opt_version.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/include/libpressio_opt_version.h
+  )
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/libpressio_opt.pc.in
   ${CMAKE_CURRENT_BINARY_DIR}/libpressio_opt.pc

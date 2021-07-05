@@ -55,31 +55,6 @@ int main(int argc, char *argv[])
   pressio_compressor_set_metrics(compressor, metrics);
   struct pressio_options* metric_options = pressio_compressor_metrics_get_options(compressor);
 
-  /*
-   * here we use the composite metrics's ability to combine metrics from other modules
-   * to compute a hybrid metric.
-   *
-   * Since we want to find the best compression_ratio subject to a psnr threshold of 65,
-   * we return -inf if we are below the threshold and the compression_ratio if we are above it.
-   *
-   * The string "objective" returned here is the key we will use to recall the metric later
-   * see where we configure outputs below
-   *
-   * Key options summarized here, please refer to the pressio_search options docs for more information
-   */
-  const char* lua_scripts = 
-    "local cr = metrics['size:compression_ratio'];\n"
-    "local psnr = metrics['error_stat:psnr'];\n"
-    "local threshold = 65.0;\n"
-    "local objective = 0;\n"
-    "if psnr < threshold then\n"
-    "  objective = -math.huge;\n"
-    "else\n"
-    "  objective = cr;\n"
-    "end\n"
-    "return \"objective\", objective;\n";
-
-  pressio_options_set_strings(metric_options, "composite:scripts", 1, &lua_scripts);
   pressio_compressor_metrics_set_options(compressor, metric_options);
   pressio_options_free(metric_options);
 
@@ -106,10 +81,37 @@ int main(int argc, char *argv[])
   // 1. Setup the compressor and search trees
   struct pressio_options* options = pressio_compressor_get_options(compressor);
   pressio_options_set_string(options, "opt:compressor", "sz");
+  pressio_options_set_strings(options, "composite:plugins", sizeof(metrics_ids)/sizeof(metrics_ids[0]), metrics_ids);
+  pressio_options_set_string(options, "sz:metric", "composite");
   pressio_options_set_string(options, "opt:search", "guess_first");
   pressio_options_set_string(options, "guess_first:search", "dist_gridsearch");
   pressio_options_set_string(options, "dist_gridsearch:search", "fraz");
   pressio_options_set_string(options, "opt:search_metrics", "progress_printer");
+  /*
+   * here we use the composite metrics's ability to combine metrics from other modules
+   * to compute a hybrid metric.
+   *
+   * Since we want to find the best compression_ratio subject to a psnr threshold of 65,
+   * we return -inf if we are below the threshold and the compression_ratio if we are above it.
+   *
+   * The string "objective" returned here is the key we will use to recall the metric later
+   * see where we configure outputs below
+   *
+   * Key options summarized here, please refer to the pressio_search options docs for more information
+   */
+  const char* lua_scripts = 
+    "local cr = metrics['size:compression_ratio'];\n"
+    "local psnr = metrics['error_stat:psnr'];\n"
+    "local threshold = 65.0;\n"
+    "local objective = 0;\n"
+    "if psnr < threshold then\n"
+    "  objective = -math.huge;\n"
+    "else\n"
+    "  objective = cr;\n"
+    "end\n"
+    "return \"objective\", objective;\n";
+
+  pressio_options_set_strings(options, "composite:scripts", 1, &lua_scripts);
 
   // 2. Describe the search space
   const char* inputs[] = {"sz:rel_err_bound"};

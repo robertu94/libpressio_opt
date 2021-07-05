@@ -74,12 +74,12 @@ int main(int argc, char *argv[])
   pressio_data lower_bound{0.0};
   pressio_data upper_bound{0.1};
   pressio_data guess = pressio_data{1e-5};
+  options.set("fraz:nthreads", 4u);
   options.set("opt:search", "dist_gridsearch");
   options.set("dist_gridsearch:search", "fraz");
   options.set("dist_gridsearch:num_bins", pressio_data{(size == 1) ? 1 : (size -1)});
   options.set("dist_gridsearch:overlap_percentage", pressio_data{.1,});
   options.set("distributed:comm", (void*)MPI_COMM_WORLD);
-  options.set("fraz:nthreads", 4u);
   options.set("opt:compressor", "sz");
   options.set("opt:inputs", inputs);
   options.set("opt:lower_bound", lower_bound);
@@ -89,7 +89,6 @@ int main(int argc, char *argv[])
   options.set("opt:global_rel_tolerance", 0.1);
   options.set("opt:max_iterations", 100u);
   options.set("opt:output", outputs);
-  options.set("opt:do_decompress", 0);
   options.set("opt:search_metrics", "composite_search");
   options.set("composite_search:search_metrics", std::vector<std::string>{"progress_printer", "record_search"});
   options.set("io:path", "/tmp/trace.csv");
@@ -119,6 +118,10 @@ int main(int argc, char *argv[])
   auto decompressed = pressio_data_new_owning(pressio_float_dtype, 3, dims);
   
   if(compressor->compress(input_data, compressed)) {
+    std::cerr << compressor->error_msg() << std::endl;
+    return compressor->error_code();
+  }
+  if(compressor->decompress(compressed, decompressed)) {
     std::cerr << compressor->error_msg() << std::endl;
     return compressor->error_code();
   }
