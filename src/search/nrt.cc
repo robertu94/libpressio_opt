@@ -13,10 +13,10 @@ struct nrt_search: public pressio_search_plugin {
       using task_response_t = std::tuple<size_t, std::vector<double>, std::vector<double>>;
 
   public:
-    pressio_search_results search(
-        std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
-        distributed::queue::StopToken& token
-        ) override {
+    pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
+                                  std::function<pressio_search_results::output_type(
+                                          pressio_search_results::input_type const &)> compress_fn,
+                                  distributed::queue::StopToken &token) override {
       pressio_search_results best_results;
       double best_objective;
       switch(mode){

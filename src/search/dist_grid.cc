@@ -19,10 +19,10 @@ struct dist_gridsearch_search: public pressio_search_plugin {
       search_method = search_plugins().build(search_method_str);
     }
 
-    pressio_search_results search(
-        std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
-        distributed::queue::StopToken& stop_token
-        ) override {
+    pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
+                                  std::function<pressio_search_results::output_type(
+                                          pressio_search_results::input_type const &)> compress_fn,
+                                  distributed::queue::StopToken &stop_token) override {
 
 
 
@@ -61,7 +61,7 @@ struct dist_gridsearch_search: public pressio_search_plugin {
       manager.
         work_queue(
           std::begin(tasks), std::end(tasks),
-          [this, compress_fn](
+          [this, &input_datas,compress_fn](
             task_request_t const& task,
             distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager) {
             //set lower and upper bounds
@@ -74,7 +74,7 @@ struct dist_gridsearch_search: public pressio_search_plugin {
             options.set("distributed:comm", (void*)task_manager.get_subcommunicator());
             search_method->set_options(options);
 
-            auto grid_result = search_method->search(compress_fn, task_manager);
+            auto grid_result = search_method->search(input_datas, compress_fn, task_manager);
             return task_response_t{grid_result.output, grid_result.status, grid_result.inputs};
           },
           [this, &best_results,&best_objective,&stop_token](task_response_t response,

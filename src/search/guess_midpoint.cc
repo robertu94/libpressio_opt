@@ -6,10 +6,10 @@
 
 struct guess_midpoint_search: public pressio_search_plugin {
   public:
-    pressio_search_results search(
-        std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
-        distributed::queue::StopToken&
-        ) override {
+    pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
+                                  std::function<pressio_search_results::output_type(
+                                          pressio_search_results::input_type const &)> compress_fn,
+                                  distributed::queue::StopToken &) override {
       pressio_search_results::input_type midpoint(lower_bound.size());
       using value_type = pressio_search_results::input_type::value_type;
       std::transform(

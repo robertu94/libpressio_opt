@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
   }
 
 
+
   pressio library;
   std::string metrics_ids[] = {"size", "time", "error_stat"};
   pressio_metrics metrics = library.get_metrics(std::begin(metrics_ids), std::end(metrics_ids));

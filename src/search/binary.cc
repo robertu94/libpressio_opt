@@ -5,10 +5,10 @@
 
 struct binary_search: public pressio_search_plugin {
   public:
-    pressio_search_results search(
-        std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
-        distributed::queue::StopToken& token
-        ) override {
+    pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
+                                  std::function<pressio_search_results::output_type(
+                                          pressio_search_results::input_type const &)> compress_fn,
+                                  distributed::queue::StopToken &token) override {
       pressio_search_results results;
       size_t iter = 2;
       auto lower = lower_bound.front();

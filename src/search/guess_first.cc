@@ -10,10 +10,10 @@ struct guess_first_search: public pressio_search_plugin {
       search_method = search_plugins().build(search_method_str);
     }
 
-    pressio_search_results search(
-        std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
-        distributed::queue::StopToken& stop_token
-        ) override {
+    pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
+                                  std::function<pressio_search_results::output_type(
+                                          pressio_search_results::input_type const &)> compress_fn,
+                                  distributed::queue::StopToken &stop_token) override {
       pressio_search_results results{};
       results.inputs = input;
       results.output = compress_fn(input);
@@ -46,7 +46,7 @@ struct guess_first_search: public pressio_search_plugin {
         default:
           break;
       }
-      return search_method->search(compress_fn, stop_token);
+      return search_method->search(input_datas, compress_fn, stop_token);
     }
 
     //configuration

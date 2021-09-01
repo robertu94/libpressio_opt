@@ -35,10 +35,10 @@ struct pressio_search_plugin : public pressio_versionable, public pressio_config
      * \returns a structure that summarizes the "best-configuration" found as determined by the module
      * \see pressio_search_metrics
      */
-    virtual pressio_search_results search(
-        std::function<pressio_search_results::output_type(pressio_search_results::input_type const&)> compress_fn,
-        distributed::queue::StopToken& stop_token
-        )=0;
+    virtual pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
+                                          std::function<pressio_search_results::output_type(
+                                                  pressio_search_results::input_type const &)> compress_fn,
+                                          distributed::queue::StopToken &stop_token) =0;
 
     /**
      * \returns a clone of the current search object

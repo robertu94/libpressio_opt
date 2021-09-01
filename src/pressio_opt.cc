@@ -237,7 +237,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       try {
         OptStopToken token;
         search_metrics->begin_search();
-        last_results = search->search(compress_thread_fn, token);
+        last_results = search->search(input_datas, compress_thread_fn, token);
         search_metrics->end_search(last_results->inputs, last_results->output);
         //set metrics results to the results metrics
         run_search_metrics = false;
