@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libpressio_opt VERSION "0.12.0" LANGUAGES C CXX)
+project(libpressio_opt VERSION "0.12.1" LANGUAGES C CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/
@@ -41,6 +41,7 @@ add_library(libpressio_opt
     src/search/guess_first.cc
     src/search/guess_midpoint.cc
     src/search/random.cc
+    src/search/sdr_search.cc
 
     src/search_metrics/progress_printer.cc
     src/search_metrics/record_search.cc
