@@ -104,7 +104,9 @@ struct fraz_search: public pressio_search_plugin {
             );
             auto should_stop = [threshold,&token,this](double value) {
               bool target_achived = value < threshold;
-              if (target_achived) token.request_stop();
+              if (target_achived) {
+                token.request_stop();
+              }
               return target_achived || (inter_iteration && token.stop_requested());
             };
 
@@ -165,7 +167,9 @@ struct fraz_search: public pressio_search_plugin {
             if(mode == pressio_search_mode_min) {
             auto should_stop = [&token, this](double value) {
               bool target_achived = (target && value < *target);
-              if (target_achived) token.request_stop();
+              if (target_achived) {
+                token.request_stop();
+              }
               return (inter_iteration && token.stop_requested()) || target_achived;
             };
 
@@ -203,7 +207,9 @@ struct fraz_search: public pressio_search_plugin {
             } else {
             auto should_stop = [&token, this](double value) {
               bool target_achived = (target && value > *target);
-              if (target_achived) token.request_stop();
+              if (target_achived) { 
+                token.request_stop();
+              }
               return (inter_iteration && token.stop_requested())|| target_achived;
             };
             best_result.y = std::numeric_limits<double>::max();

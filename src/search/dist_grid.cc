@@ -74,8 +74,12 @@ struct dist_gridsearch_search: public pressio_search_plugin {
             options.set("distributed:comm", (void*)task_manager.get_subcommunicator());
             search_method->set_options(options);
 
-            auto grid_result = search_method->search(input_datas, compress_fn, task_manager);
-            return task_response_t{grid_result.output, grid_result.status, grid_result.inputs};
+            if(task_manager.stop_requested()) {
+              return task_response_t{std::vector<double>{}, 1, std::vector<double>{}};
+            } else {
+              auto grid_result = search_method->search(input_datas, compress_fn, task_manager);
+              return task_response_t{grid_result.output, grid_result.status, grid_result.inputs};
+            }
           },
           [this, &best_results,&best_objective,&stop_token](task_response_t response,
             distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager
