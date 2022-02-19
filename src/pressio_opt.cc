@@ -259,7 +259,9 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
     }
 
     int decompress_impl(const pressio_data *input, struct pressio_data* output) override {
-      return compressor->decompress(input, output);
+      const compat::span<pressio_data const*const> inputs(&input, 1);
+      compat::span<pressio_data*> outputs(&output, 1);
+      return decompress_many_impl(inputs, outputs);
     }
     int decompress_many_impl(const compat::span<pressio_data const*const>& inputs, compat::span<struct pressio_data*>& outputs) override {
       return compressor->decompress_many(
