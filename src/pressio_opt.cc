@@ -135,13 +135,21 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         }
 
         //configure the compressor for this input
-        auto settings = thread_compressor->get_options();
+        auto base = thread_compressor->get_options();
+        pressio_options settings;
         for (size_t i = 0; i < input_v.size(); ++i) {
-          if (settings.cast_set(input_settings[i], input_v[i],
-                                pressio_conversion_explicit) !=
-              pressio_options_key_set) {
+          if(base.key_status(input_settings[i]) == pressio_options_key_does_not_exist) {
             throw pressio_search_exception(
-              std::string("failed to configure setting: ") + input_settings[i]);
+              std::string("setting does not exist: ") + input_settings[i]);
+          }
+          settings.set(input_settings[i], base.get(input_settings[i]));
+          switch(settings.cast_set(input_settings[i], input_v[i], pressio_conversion_explicit)) {
+            case pressio_options_key_does_not_exist:
+              throw pressio_search_exception("setting does not exist: " + input_settings[i]);
+            case pressio_options_key_exists:
+              throw pressio_search_exception("failed to convert setting: " + input_settings[i]);
+            default:
+              break;
           }
         }
         if(thread_compressor->set_options(settings)) {

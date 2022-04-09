@@ -1,5 +1,5 @@
 libpressio-opt an autotuning meta-compressor for libpressio
-Copyright © 2021 Robert Underwood
+Copyright © 2022 Robert Underwood
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
