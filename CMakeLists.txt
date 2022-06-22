@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libpressio_opt VERSION "0.13.2" LANGUAGES C CXX)
+project(libpressio_opt VERSION "0.13.3" LANGUAGES C CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/
@@ -81,14 +81,28 @@ if(USE_CLANG_TIDY)
   set_target_properties(libpressio_opt PROPERTIES C_CLANG_TIDY "${CLANG_TIDY}")
 endif()
 
-export(TARGETS libpressio_opt NAMESPACE LibPressioOpt:: FILE
-  LibPressioOptConfig.cmake)
-install(TARGETS libpressio_opt EXPORT LibPressioOptConfig
+install(TARGETS libpressio_opt EXPORT LibPressioOptTargets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
-install(EXPORT LibPressioOptConfig NAMESPACE LibPressioOpt:: DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/LibPressioOpt/cmake)
+install(EXPORT LibPressioOptTargets NAMESPACE LibPressioOpt:: DESTINATION
+  ${CMAKE_INSTALL_LIBDIR}/cmake/LibPressioOpt/)
+include(CMakePackageConfigHelpers)
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/LibPressioOptConfig.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/LibPressioOptConfig.cmake"
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LibPressioOpt
+)
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/LibPressioOptConfigVersion.cmake"
+  VERSION "${PROJECT_VERSION}"
+  COMPATIBILITY AnyNewerVersion
+)
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/LibPressioOptConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/LibPressioOptConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LibPressioOpt
+)
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libpressio_opt)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libpressio_opt.pc DESTINATION ${CMAKE_INSTALL_PREFIX}/share/pkgconfig)
 

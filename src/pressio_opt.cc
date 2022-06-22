@@ -17,6 +17,9 @@
 #include "libpressio_opt_version.h"
 #include <std_compat/memory.h>
 
+extern "C" void libpressio_register_libpressio_opt() {
+}
+
 namespace {
   template <class Registry>
   std::vector<std::string> get_registry_names(Registry const& plugins) {
