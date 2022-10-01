@@ -99,7 +99,11 @@ struct composite_search_metrics : public pressio_search_metrics_plugin {
   };
 
   virtual pressio_options get_metrics_results() override {
-    return pressio_options();
+    pressio_options options;
+    for (auto & i : plugins) {
+      options.copy_from(i->get_metrics_results());
+    }
+    return options;
   }
 
   const char* prefix() const override {
