@@ -82,7 +82,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       options.copy_from(compressor->get_configuration());
       options.copy_from(search->get_configuration());
       options.copy_from(search_metrics->get_configuration());
-      set(options,"pressio:thread_safe", (int)pressio_thread_safety_single);
+      set(options,"pressio:thread_safe", pressio_thread_safety_single);
       set(options,"opt:search", get_registry_names(search_plugins()));
       set(options,"opt:search_metrics", get_registry_names(search_metrics_plugins()));
       return options;
@@ -354,7 +354,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
       int mpi_init=0;
       MPI_Initialized(&mpi_init);
 
-      int compressor_thread_safety = get_threadsafe(*compressor);
+      pressio_thread_safety compressor_thread_safety = get_threadsafe(*compressor);
 
       if(mpi_init) {
         int mpi_thread_provided;
