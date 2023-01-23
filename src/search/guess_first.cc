@@ -50,6 +50,12 @@ struct guess_first_search: public pressio_search_plugin {
     }
 
     //configuration
+    pressio_options get_configuration() const override {
+      pressio_options opts;
+      set_meta_configuration(opts, "guess_first:search", search_plugins(), search_method);
+      return opts;
+    }
+
     pressio_options get_options() const override {
       pressio_options opts;
       

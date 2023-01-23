@@ -79,12 +79,10 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
 
     struct pressio_options get_configuration_impl() const override {
       struct pressio_options options;
-      options.copy_from(compressor->get_configuration());
-      options.copy_from(search->get_configuration());
-      options.copy_from(search_metrics->get_configuration());
+      set_meta_configuration(options, "opt:compressor", compressor_plugins(), compressor);
+      set_meta_configuration(options, "opt:search", search_plugins(), search);
+      set_meta_configuration(options, "opt:search_metrics", search_metrics_plugins(), search_metrics);
       set(options,"pressio:thread_safe", pressio_thread_safety_single);
-      set(options,"opt:search", get_registry_names(search_plugins()));
-      set(options,"opt:search_metrics", get_registry_names(search_metrics_plugins()));
       return options;
     }
 

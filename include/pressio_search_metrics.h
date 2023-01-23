@@ -15,7 +15,7 @@
 /**
  * base class for search metrics plugins
  */
-struct pressio_search_metrics_plugin : public pressio_configurable, public pressio_errorable{
+struct pressio_search_metrics_plugin : public pressio_configurable{
   virtual ~pressio_search_metrics_plugin()=default;
   //
   //hooks for methods
