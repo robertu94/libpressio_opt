@@ -16,6 +16,21 @@
  * base class for search metrics plugins
  */
 struct pressio_search_metrics_plugin : public pressio_configurable{
+  std::string type() const final {
+      return "search_metric";
+  }
+
+  virtual pressio_options get_configuration_impl() const {
+      return {};
+  }
+  pressio_options get_configuration() const final {
+      auto opts = get_configuration_impl();
+      set(opts, "pressio:children", children());
+      set(opts, "pressio:type", type());
+      set(opts, "pressio:prefix", prefix());
+      return opts;
+  }
+
   virtual ~pressio_search_metrics_plugin()=default;
   //
   //hooks for methods

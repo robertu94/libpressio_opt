@@ -50,7 +50,7 @@ struct guess_first_search: public pressio_search_plugin {
     }
 
     //configuration
-    pressio_options get_configuration() const override {
+    pressio_options get_configuration_impl() const override {
       pressio_options opts;
       set_meta_configuration(opts, "guess_first:search", search_plugins(), search_method);
       return opts;
@@ -110,6 +110,12 @@ struct guess_first_search: public pressio_search_plugin {
 
     std::shared_ptr<pressio_search_plugin> clone() override {
       return compat::make_unique<guess_first_search>(*this);
+    }
+
+    std::vector<std::string> children() const final override {
+        return {
+            search_method->get_name()
+        };
     }
 
 private:

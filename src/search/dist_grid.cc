@@ -154,7 +154,7 @@ struct dist_gridsearch_search: public pressio_search_plugin {
       return opts;
     }
 
-    pressio_options get_configuration() const override {
+    pressio_options get_configuration_impl() const override {
         pressio_options opts;
         set_meta_configuration(opts, "dist_gridsearch:search", search_plugins(), search_method);
         return opts;
@@ -268,6 +268,12 @@ private:
         idx = 0;
       }
       return tasks;
+    }
+
+    std::vector<std::string> children() const final override {
+        return {
+            search_method->get_name()
+        };
     }
 
 

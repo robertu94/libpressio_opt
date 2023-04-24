@@ -384,6 +384,14 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
     std::vector<std::string> input_settings{};
     std::vector<std::string> output_settings;
     int do_decompress = 1;
+
+    std::vector<std::string> children_impl() const override {
+        return {
+            compressor->get_name(),
+            search->get_name(),
+            search_metrics->get_name(),
+        };
+    }
 };
 
 static pressio_register X(compressor_plugins(), "opt", [](){ return compat::make_unique<pressio_opt_plugin>(); });

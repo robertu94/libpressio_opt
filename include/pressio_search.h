@@ -21,6 +21,20 @@ class pressio_search_exception : public std::runtime_error {
  */
 struct pressio_search_plugin : public pressio_versionable, public pressio_configurable  {
   public:
+    std::string type() const final {
+        return "search";
+    }
+    virtual pressio_options get_configuration_impl() const {
+        return {};
+    }
+    pressio_options get_configuration() const final {
+        auto opts = get_configuration_impl();
+        set(opts, "pressio:children", children());
+        set(opts, "pressio:type", type());
+        set(opts, "pressio:prefix", prefix());
+        return opts;
+    }
+
     /** destructor */
     virtual ~pressio_search_plugin()=default;
 
