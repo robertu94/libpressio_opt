@@ -110,3 +110,32 @@ Please read this post on [how to file a good bug report](https://codingnest.com/
 + the output of `cmake -L $BUILD_DIR`
 + the version of each of LibPressioOpts's dependencies listed in the README that you have installed. Where possible, please provide the commit hashes.
 
+
+## Cite
+
+If you find this work useful, please consider citing
+
+```bibtex
+@article{underwood2022optzconfig,
+  title={OptZConfig: Efficient Parallel Optimization of Lossy Compression Configuration},
+  author={Underwood, Robert and Calhoun, Jon C and Di, Sheng and Apon, Amy and Cappello, Franck},
+  journal={IEEE Transactions on Parallel and Distributed Systems},
+  year={2022},
+  publisher={IEEE}
+}
+```
+
+or if you only optimize compression ratio
+
+```bibtex
+@inproceedings{underwood2020fraz,
+  title={Fraz: A generic high-fidelity fixed-ratio lossy compression framework for scientific floating-point data},
+  author={Underwood, Robert and Di, Sheng and Calhoun, Jon C and Cappello, Franck},
+  booktitle={2020 IEEE International Parallel and Distributed Processing Symposium (IPDPS)},
+  pages={567--577},
+  year={2020},
+  organization={IEEE}
+}
+
+```
+
