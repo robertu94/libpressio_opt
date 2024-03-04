@@ -1,7 +1,8 @@
 #include <stdexcept>
 #include <functional>
-#include <vector>
 #include <libpressio_ext/cpp/pressio.h>
+#include <libpressio_ext/cpp/versionable.h>
+#include <libpressio_ext/cpp/configurable.h>
 #include <libpressio_ext/cpp/options.h>
 #include <libdistributed_task_manager.h>
 #include "pressio_search_results.h"

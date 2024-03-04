@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
   pressio_options_set_strings(options, "composite:scripts", 1, &lua_scripts);
 
   // 2. Describe the search space
-  const char* inputs[] = {"sz:rel_err_bound"};
+  const char* inputs[] = {"pressio:rel"};
   double lower_bound[] = {0.0};
   double upper_bound[] = {0.1};
   size_t bound_dims[] = {1};
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
   pressio_options_set_uinteger(options, "fraz:nthreads", 4u);
 
   //configure sz error bounded compressor fixed parameters
-  pressio_options_set_integer(options, "sz:error_bound_mode", REL);
+//  pressio_options_set_integer(options, "sz:error_bound_mode", REL);
 
   //apply the compressor and search options and print them out
   if(pressio_compressor_set_options(compressor, options)) {
