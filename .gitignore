@@ -2,4 +2,5 @@
 spack.lock
 build
 spack-build*
+build-linux*
 spack-configure*
