@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
   // create a metrics object that using a multi-objective search
   // We are loading the size, time, and error_stat modules, the composite
   // module used below is always loaded implicitly
-  const char* metrics_ids[] = { "size", "time", "error_stat" };
+  const char* metrics_ids[] = { "size",  "error_stat", "time"};
   struct pressio_metrics* metrics = pressio_new_metrics(library, metrics_ids, 3);
   pressio_compressor_set_metrics(compressor, metrics);
   struct pressio_options* metric_options = pressio_compressor_metrics_get_options(compressor);

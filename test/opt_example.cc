@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
 
   pressio library;
-  std::string metrics_ids[] = {"size", "time", "error_stat"};
+  std::string metrics_ids[] = {"size", "error_stat", "time"};
   pressio_metrics metrics = library.get_metrics(std::begin(metrics_ids), std::end(metrics_ids));
   pressio_options metric_options = metrics->get_options();
   std::vector<std::string> lua_scripts { R"lua(
