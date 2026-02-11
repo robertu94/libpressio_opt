@@ -7,6 +7,8 @@
 #include <libdistributed_task_manager.h>
 #include "pressio_search_results.h"
 
+namespace libpressio_opt { namespace search {
+    using namespace libpressio;
 /**
  * \file
  * \brief interface for search modules
@@ -63,6 +65,10 @@ struct pressio_search_plugin : public pressio_versionable, public pressio_config
 private:
 };
 
+/** \returns a reference to the registry singleton */
+pressio_registry<std::shared_ptr<pressio_search_plugin>>& search_plugins();
+} }
+
 /**
  * wrapper interface for C usage if required
  */
@@ -70,7 +76,7 @@ struct pressio_search {
   /** constructor 
    * \param[in] impl the plugin to construct
    * */
-  pressio_search(std::shared_ptr<pressio_search_plugin>&& impl): plugin(std::forward<std::shared_ptr<pressio_search_plugin>>(impl)) {}
+  pressio_search(std::shared_ptr<libpressio_opt::search::pressio_search_plugin>&& impl): plugin(std::forward<std::shared_ptr<libpressio_opt::search::pressio_search_plugin>>(impl)) {}
   /** default constructor */
   pressio_search()=default;
   /** move constructor
@@ -97,19 +103,16 @@ struct pressio_search {
   }
 
   /** make pressio_search_plugin behave like a shared_ptr */
-  pressio_search_plugin& operator*() const noexcept {
+  libpressio_opt::search::pressio_search_plugin& operator*() const noexcept {
     return *plugin;
   }
 
   /** make pressio_search_plugin behave like a shared_ptr */
-  pressio_search_plugin* operator->() const noexcept {
+  libpressio_opt::search::pressio_search_plugin* operator->() const noexcept {
     return plugin.get();
   }
 
   /** the actual plugin */
-  std::shared_ptr<pressio_search_plugin> plugin;
+  std::shared_ptr<libpressio_opt::search::pressio_search_plugin> plugin;
 };
 
-
-/** \returns a reference to the registry singleton */
-pressio_registry<std::shared_ptr<pressio_search_plugin>>& search_plugins();

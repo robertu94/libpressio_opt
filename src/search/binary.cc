@@ -3,6 +3,7 @@
 #include "pressio_search.h"
 #include <std_compat/std_compat.h>
 
+namespace libpressio_opt { namespace search { namespace binary {
 struct binary_search: public pressio_search_plugin {
   public:
     pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
@@ -149,3 +150,4 @@ private:
 
 
 static pressio_register binary_search_register(search_plugins(), "binary", [](){ return compat::make_unique<binary_search>();});
+} } }

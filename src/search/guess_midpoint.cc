@@ -4,6 +4,7 @@
 #include <std_compat/memory.h>
 #include <algorithm>
 
+namespace libpressio_opt { namespace search { namespace guess_midpoint {
 struct guess_midpoint_search: public pressio_search_plugin {
   public:
     pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
@@ -83,3 +84,4 @@ private:
 
 
 static pressio_register guess_midpoint_register(search_plugins(), "guess_midpoint", [](){ return compat::make_unique<guess_midpoint_search>();});
+}}}

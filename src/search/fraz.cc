@@ -6,6 +6,7 @@
 #include "pressio_search_results.h"
 #include <std_compat/memory.h>
 
+namespace libpressio_opt { namespace search { namespace fraz {
 namespace {
     auto clamp(double value, double low, double high) {
       assert(low < high);
@@ -355,3 +356,4 @@ private:
 
 
 static pressio_register fraz_register(search_plugins(), "fraz", [](){ return compat::make_unique<fraz_search>();});
+}}}

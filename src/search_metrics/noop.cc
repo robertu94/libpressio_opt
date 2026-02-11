@@ -6,6 +6,7 @@
 #include <std_compat/memory.h>
 
 
+namespace libpressio_opt { namespace search_metrics { namespace noop {
 struct noop_search_metric : public pressio_search_metrics_plugin {
 
   noop_search_metric() {
@@ -34,3 +35,4 @@ struct noop_search_metric : public pressio_search_metrics_plugin {
 };
 
 static pressio_register X(search_metrics_plugins(), "noop", [](){ return compat::make_unique<noop_search_metric>();});
+}}}

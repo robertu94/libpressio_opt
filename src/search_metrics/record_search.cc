@@ -8,6 +8,8 @@
 #include <std_compat/memory.h>
 #include <libpressio_ext/cpp/distributed_manager.h>
 
+namespace libpressio_opt {namespace search_metrics {namespace record {
+    using namespace libpressio::distributed;
 struct record_search : public pressio_search_metrics_plugin {
   void begin_search() override {
     results.clear();
@@ -100,3 +102,4 @@ struct record_search : public pressio_search_metrics_plugin {
   pressio_io io = io_plugins().build("csv");
 };
 static pressio_register X(search_metrics_plugins(), "record_search", [](){ return compat::make_unique<record_search>();});
+}}}

@@ -1,6 +1,8 @@
 #include "pressio_search_metrics.h"
 
+namespace libpressio_opt { namespace search_metrics {
 pressio_registry<std::shared_ptr<pressio_search_metrics_plugin>>& search_metrics_plugins() {
   static pressio_registry<std::shared_ptr<pressio_search_metrics_plugin>> registry;
   return registry;
 }
+}}

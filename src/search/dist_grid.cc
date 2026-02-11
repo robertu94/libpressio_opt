@@ -6,6 +6,8 @@
 #include <std_compat/memory.h>
 #include <libpressio_ext/cpp/distributed_manager.h>
 
+namespace libpressio_opt { namespace search { namespace dist_gridsearch {
+    using namespace libpressio::distributed;
 namespace {
   auto loss(pressio_search_results::output_type::value_type target, pressio_search_results::output_type::value_type actual) {
     return fabs(target-actual);
@@ -22,7 +24,7 @@ struct dist_gridsearch_search: public pressio_search_plugin {
     pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
                                   std::function<pressio_search_results::output_type(
                                           pressio_search_results::input_type const &)> compress_fn,
-                                  distributed::queue::StopToken &stop_token) override {
+                                  ::distributed::queue::StopToken &stop_token) override {
 
 
 
@@ -63,7 +65,7 @@ struct dist_gridsearch_search: public pressio_search_plugin {
           std::begin(tasks), std::end(tasks),
           [this, &input_datas,compress_fn](
             task_request_t const& task,
-            distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager) {
+            ::distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager) {
             //set lower and upper bounds
             auto grid_lower = std::get<0>(task);
             auto grid_upper = std::get<1>(task);
@@ -82,7 +84,7 @@ struct dist_gridsearch_search: public pressio_search_plugin {
             }
           },
           [this, &best_results,&best_objective,&stop_token](task_response_t response,
-            distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager
+            ::distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager
             ) {
             auto const& status = std::get<1>(response);
             auto const& inputs = std::get<2>(response);
@@ -294,3 +296,4 @@ private:
 
 
 static pressio_register dist_search_register(search_plugins(), "dist_gridsearch", [](){ return compat::make_unique<dist_gridsearch_search>();});
+}}}

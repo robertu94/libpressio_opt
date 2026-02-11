@@ -4,3 +4,4 @@ build
 spack-build*
 build-linux*
 spack-configure*
+.clangd

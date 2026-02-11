@@ -7,6 +7,7 @@
 #include <vector>
 #include <std_compat/memory.h>
 
+namespace libpressio_opt { namespace search_metrics { namespace composite {
 struct composite_search_metrics : public pressio_search_metrics_plugin {
   void begin_search() override {
     for (auto& plugin : plugins) {
@@ -121,3 +122,4 @@ struct composite_search_metrics : public pressio_search_metrics_plugin {
   std::vector<pressio_search_metrics> plugins;
 };
 static pressio_register X(search_metrics_plugins(), "composite_search", [](){ return compat::make_unique<composite_search_metrics>();});
+}}}

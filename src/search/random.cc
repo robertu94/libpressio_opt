@@ -12,6 +12,8 @@
 #include <std_compat/memory.h>
 #include <libpressio_ext/cpp/distributed_manager.h>
 
+namespace libpressio_opt { namespace search { namespace random {
+    using namespace libpressio::distributed;
 namespace {
 auto
 loss(pressio_search_results::output_type::value_type target,
@@ -32,7 +34,7 @@ public:
   pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
                                 std::function<pressio_search_results::output_type(
                                         pressio_search_results::input_type const &)> compress_fn,
-                                distributed::queue::StopToken &token) override
+                                ::distributed::queue::StopToken &token) override
   {
     pressio_search_results best_results{};
     double best_objective;
@@ -96,7 +98,7 @@ public:
       },
       [&best_results, &best_objective, &token, &should_stop,
        this](task_response_t response,
-             distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager) {
+             ::distributed::queue::TaskManager<task_request_t, MPI_Comm>& task_manager) {
         const auto& inputs = std::get<0>(response);
         const auto& objective = std::get<1>(response).front();
 
@@ -236,3 +238,4 @@ private:
 static pressio_register guess_random_register(search_plugins(), "random_search", []() {
   return compat::make_unique<random_search>();
 });
+}}}

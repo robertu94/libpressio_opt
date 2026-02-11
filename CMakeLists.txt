@@ -26,6 +26,7 @@ find_package(dlib REQUIRED)
 find_package(std_compat REQUIRED)
 find_package(PkgConfig)
 find_package(Threads)
+find_package(OpenMP REQUIRED COMPONENTS CXX)
 
 add_library(libpressio_opt
   #core features
@@ -35,6 +36,7 @@ add_library(libpressio_opt
 
     src/search/binary.cc
     src/search/fraz.cc
+    src/search/hopt.cc
     src/search/guess.cc
     src/search/dist_grid.cc
     src/search/guess_first.cc
@@ -61,7 +63,7 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
   )
 target_link_libraries(libpressio_opt PUBLIC LibDistributed::libdistributed std_compat::std_compat
-  LibPressio::libpressio PRIVATE dlib::dlib )
+    LibPressio::libpressio PRIVATE dlib::dlib OpenMP::OpenMP_CXX)
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libpressio_opt_version.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/include/libpressio_opt_version.h

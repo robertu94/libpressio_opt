@@ -4,6 +4,7 @@
 #include <libpressio_ext/cpp/pressio.h>
 #include <std_compat/memory.h>
 
+namespace libpressio_opt { namespace search { namespace guess_first { 
 struct guess_first_search: public pressio_search_plugin {
   public:
     guess_first_search() {
@@ -13,7 +14,7 @@ struct guess_first_search: public pressio_search_plugin {
     pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
                                   std::function<pressio_search_results::output_type(
                                           pressio_search_results::input_type const &)> compress_fn,
-                                  distributed::queue::StopToken &stop_token) override {
+                                  ::distributed::queue::StopToken &stop_token) override {
       pressio_search_results results{};
       results.inputs = input;
       results.output = compress_fn(input);
@@ -129,3 +130,4 @@ private:
 
 
 static pressio_register guess_first_register(search_plugins(), "guess_first", [](){ return compat::make_unique<guess_first_search>();});
+}}}

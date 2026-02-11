@@ -17,8 +17,10 @@
 #include "libpressio_opt_version.h"
 #include <std_compat/memory.h>
 
-extern "C" void libpressio_register_libpressio_opt() {
-}
+
+namespace libpressio_opt { namespace compressors { namespace opt {
+    using namespace libpressio_opt::search;
+    using namespace libpressio_opt::search_metrics;
 
 namespace {
   template <class Registry>
@@ -43,7 +45,7 @@ class OptStopToken: public distributed::queue::StopToken {
 };
 }
 
-class pressio_opt_plugin: public libpressio_compressor_plugin {
+class pressio_opt_plugin: public ::libpressio::compressors::libpressio_compressor_plugin {
   public:
     pressio_opt_plugin() {
       compressor = library.get_compressor(compressor_method);
@@ -131,7 +133,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
           search_metrics->begin_iter(input_v);
 
         if(input_v.size() != input_settings.size()) {
-            throw pressio_search_exception(
+            throw search::pressio_search_exception(
               std::string("mismatched number of inputs inputs=") + std::to_string(input_v.size()) + " settings=" + std::to_string(input_settings.size()));
         }
 
@@ -140,21 +142,21 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         pressio_options settings;
         for (size_t i = 0; i < input_v.size(); ++i) {
           if(base.key_status(input_settings[i]) == pressio_options_key_does_not_exist) {
-            throw pressio_search_exception(
+            throw search::pressio_search_exception(
               std::string("setting does not exist: ") + input_settings[i]);
           }
           settings.set(input_settings[i], base.get(input_settings[i]));
           switch(settings.cast_set(input_settings[i], input_v[i], pressio_conversion_explicit)) {
             case pressio_options_key_does_not_exist:
-              throw pressio_search_exception("setting does not exist: " + input_settings[i]);
+              throw search::pressio_search_exception("setting does not exist: " + input_settings[i]);
             case pressio_options_key_exists:
-              throw pressio_search_exception("failed to convert setting: " + input_settings[i]);
+              throw search::pressio_search_exception("failed to convert setting: " + input_settings[i]);
             default:
               break;
           }
         }
         if(thread_compressor->set_options(settings)) {
-          throw pressio_search_exception(
+          throw search::pressio_search_exception(
             std::string("failed to configure compressor: ") +
             thread_compressor->error_msg());
         }
@@ -165,7 +167,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
               input_datas.data()+input_datas.size(),
               thread_outputs.data(),
               thread_outputs.data()+thread_outputs.size())) {
-          throw pressio_search_exception(
+          throw search::pressio_search_exception(
             std::string("failed to compress data: ") +
             thread_compressor->error_msg());
         }
@@ -192,7 +194,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
                 thread_outputs.data()+thread_outputs.size(),
                 decompressed_ptrs.data(),
                 decompressed_ptrs.data()+decompressed_ptrs.size())) {
-            throw pressio_search_exception(
+            throw search::pressio_search_exception(
               std::string("failed to decompress data: ") +
               thread_compressor->error_msg());
           }
@@ -204,11 +206,11 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         for (auto const& output_setting : output_settings) {
           double result;
           if(metrics_results.find(output_setting) == metrics_results.end()) {
-            throw pressio_search_exception(
+            throw search::pressio_search_exception(
               std::string("metric does not exist: ") + output_setting);
           }
           if(metrics_results.cast(output_setting, &result, pressio_conversion_explicit) != pressio_options_key_set) {
-            throw pressio_search_exception(
+            throw search::pressio_search_exception(
               std::string("metric is not convertible to double: ") +
               output_setting);
           }
@@ -256,7 +258,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
           compress_fn(last_results->inputs);
           return 0;
         }
-      } catch(pressio_search_exception const& e) {
+      } catch(search::pressio_search_exception const& e) {
         return set_error(2, e.what());
       }
 
@@ -395,3 +397,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
 };
 
 static pressio_register X(compressor_plugins(), "opt", [](){ return compat::make_unique<pressio_opt_plugin>(); });
+}}}
+
+extern "C" void libpressio_register_libpressio_opt() {
+}

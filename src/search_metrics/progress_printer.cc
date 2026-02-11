@@ -8,6 +8,7 @@
 #include <mpi.h>
 #include <mutex>
 
+namespace libpressio_opt { namespace search_metrics { namespace progress_printer {
 std::mutex printer_mutex;
 
 struct progress_printer : public pressio_search_metrics_plugin {
@@ -70,3 +71,4 @@ struct progress_printer : public pressio_search_metrics_plugin {
 };
 
 static pressio_register X(search_metrics_plugins(), "progress_printer", [](){ return compat::make_unique<progress_printer>();});
+}}}

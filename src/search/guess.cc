@@ -2,6 +2,7 @@
 #include "pressio_search_results.h"
 #include <std_compat/memory.h>
 
+namespace libpressio_opt { namespace search { namespace guess {
 struct guess_search: public pressio_search_plugin {
   public:
     pressio_search_results search(compat::span<const pressio_data *const> const &input_datas,
@@ -66,3 +67,4 @@ private:
 
 
 static pressio_register guess_register(search_plugins(), "guess", [](){ return compat::make_unique<guess_search>();});
+}}}
