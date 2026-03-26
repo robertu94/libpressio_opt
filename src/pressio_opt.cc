@@ -17,9 +17,6 @@
 #include "libpressio_opt_version.h"
 #include <std_compat/memory.h>
 
-extern "C" void libpressio_register_libpressio_opt() {
-}
-
 namespace {
   template <class Registry>
   std::vector<std::string> get_registry_names(Registry const& plugins) {
@@ -112,7 +109,7 @@ class pressio_opt_plugin: public libpressio::compressors::libpressio_compressor_
       get(search_options, "opt:do_decompress", &do_decompress);
 
 
-      
+
       return 0;
     }
 
@@ -394,4 +391,14 @@ class pressio_opt_plugin: public libpressio::compressors::libpressio_compressor_
     }
 };
 
-static libpressio::pressio_register X(libpressio::compressor_plugins(), "opt", [](){ return compat::make_unique<pressio_opt_plugin>(); });
+namespace libpressio {
+    namespace compressors {
+        namespace opt {
+            static libpressio::pressio_register registration(libpressio::compressor_plugins(), "opt", [](){ return compat::make_unique<pressio_opt_plugin>(); });
+        }
+    }
+}
+
+extern "C" void libpressio_register_libpressio_opt() {
+    libpressio::compressors::opt::registration.ensure_registered();
+}
