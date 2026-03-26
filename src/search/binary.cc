@@ -148,4 +148,10 @@ private:
 };
 
 
-static libpressio::pressio_register binary_search_register(search_plugins(), "binary", [](){ return compat::make_unique<binary_search>();});
+namespace libpressio {
+    namespace search {
+        namespace binary_ns {
+            libpressio::pressio_register registration(search_plugins(), "binary", [](){ return compat::make_unique<binary_search>();});
+        }
+    }
+}

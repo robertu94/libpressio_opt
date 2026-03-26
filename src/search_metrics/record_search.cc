@@ -99,4 +99,12 @@ struct record_search : public pressio_search_metrics_plugin {
   std::string io_format = "csv";
   pressio_io io = libpressio::io_plugins().build("csv");
 };
-static libpressio::pressio_register X(search_metrics_plugins(), "record_search", [](){ return compat::make_unique<record_search>();});
+
+
+namespace libpressio {
+    namespace search_metrics {
+        namespace record_search_ns {
+            libpressio::pressio_register registration(search_metrics_plugins(), "record_search", [](){ return compat::make_unique<record_search>();});
+        }
+    }
+}

@@ -393,12 +393,42 @@ class pressio_opt_plugin: public libpressio::compressors::libpressio_compressor_
 
 namespace libpressio {
     namespace compressors {
-        namespace opt {
-            static libpressio::pressio_register registration(libpressio::compressor_plugins(), "opt", [](){ return compat::make_unique<pressio_opt_plugin>(); });
+        namespace opt_ns {
+            libpressio::pressio_register registration(libpressio::compressor_plugins(), "opt", [](){ return compat::make_unique<pressio_opt_plugin>(); });
         }
+    }
+
+    namespace search {
+        namespace binary_ns { extern pressio_register registration; }
+        namespace dist_grid_ns { extern pressio_register registration; }
+        // namespace fraz_ns { extern pressio_register registration; }
+        namespace guess_ns { extern pressio_register registration; }
+        namespace guess_first_ns { extern pressio_register registration; }
+        namespace guess_midpoint_ns { extern pressio_register registration; }
+        namespace random_ns { extern pressio_register registration; }
+    }
+
+    namespace search_metrics {
+        namespace composite_search_ns { extern pressio_register registration; }
+        namespace noop_ns { extern pressio_register registration; }
+        namespace progress_printer_ns { extern pressio_register registration; }
+        namespace record_search_ns { extern pressio_register registration; }
     }
 }
 
 extern "C" void libpressio_register_libpressio_opt() {
-    libpressio::compressors::opt::registration.ensure_registered();
+    libpressio::compressors::opt_ns::registration.ensure_registered();
+
+    libpressio::search::binary_ns::registration.ensure_registered();
+    libpressio::search::dist_grid_ns::registration.ensure_registered();
+    // libpressio::search::fraz_ns::registration.ensure_registered();
+    libpressio::search::guess_ns::registration.ensure_registered();
+    libpressio::search::guess_first_ns::registration.ensure_registered();
+    libpressio::search::guess_midpoint_ns::registration.ensure_registered();
+    libpressio::search::random_ns::registration.ensure_registered();
+
+    libpressio::search_metrics::composite_search_ns::registration.ensure_registered();
+    libpressio::search_metrics::noop_ns::registration.ensure_registered();
+    libpressio::search_metrics::progress_printer_ns::registration.ensure_registered();
+    libpressio::search_metrics::record_search_ns::registration.ensure_registered();
 }

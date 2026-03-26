@@ -293,4 +293,10 @@ private:
 };
 
 
-static libpressio::pressio_register dist_search_register(search_plugins(), "dist_gridsearch", [](){ return compat::make_unique<dist_gridsearch_search>();});
+namespace libpressio {
+    namespace search {
+        namespace dist_grid_ns {
+            libpressio::pressio_register registration(search_plugins(), "dist_gridsearch", [](){ return compat::make_unique<dist_gridsearch_search>();});
+        }
+    }
+}

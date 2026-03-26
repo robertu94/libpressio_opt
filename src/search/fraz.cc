@@ -354,4 +354,10 @@ private:
 };
 
 
-static libpressio::pressio_register fraz_register(search_plugins(), "fraz", [](){ return compat::make_unique<fraz_search>();});
+namespace libpressio {
+    namespace search {
+        namespace fraz_ns {
+            libpressio::pressio_register registration(search_plugins(), "fraz", [](){ return compat::make_unique<fraz_search>();});
+        }
+    }
+}

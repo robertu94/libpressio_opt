@@ -233,6 +233,12 @@ private:
   double global_rel_tolerance = .1;
 };
 
-static libpressio::pressio_register guess_random_register(search_plugins(), "random_search", []() {
-  return compat::make_unique<random_search>();
-});
+namespace libpressio {
+    namespace search {
+        namespace random_ns {
+            libpressio::pressio_register registration(search_plugins(), "random_search", []() {
+              return compat::make_unique<random_search>();
+            });
+        }
+    }
+}

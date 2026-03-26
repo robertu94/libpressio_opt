@@ -82,4 +82,10 @@ private:
 };
 
 
-static libpressio::pressio_register guess_midpoint_register(search_plugins(), "guess_midpoint", [](){ return compat::make_unique<guess_midpoint_search>();});
+namespace libpressio {
+    namespace search {
+        namespace guess_midpoint_ns {
+            libpressio::pressio_register registration(search_plugins(), "guess_midpoint", [](){ return compat::make_unique<guess_midpoint_search>();});
+        }
+    }
+}
