@@ -43,7 +43,7 @@ class OptStopToken: public distributed::queue::StopToken {
 };
 }
 
-class pressio_opt_plugin: public libpressio_compressor_plugin {
+class pressio_opt_plugin: public libpressio::compressors::libpressio_compressor_plugin {
   public:
     pressio_opt_plugin() {
       compressor = library.get_compressor(compressor_method);
@@ -79,7 +79,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
 
     struct pressio_options get_configuration_impl() const override {
       struct pressio_options options;
-      set_meta_configuration(options, "opt:compressor", compressor_plugins(), compressor);
+      set_meta_configuration(options, "opt:compressor", libpressio::compressor_plugins(), compressor);
       set_meta_configuration(options, "opt:search", search_plugins(), search);
       set_meta_configuration(options, "opt:search_metrics", search_metrics_plugins(), search_metrics);
       set(options,"pressio:thread_safe", pressio_thread_safety_single);
@@ -100,7 +100,7 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
         search_options.set_type(search->get_name(), "opt:objective_mode_name", pressio_option_charptr_type);
       }
 
-      get_meta(search_options, "opt:compressor", compressor_plugins(), compressor_method, compressor);
+      get_meta(search_options, "opt:compressor", libpressio::compressor_plugins(), compressor_method, compressor);
       //the search needs to know if the compressor is thread_safe, and can only
       //check if that is true, after the compressor has been configured
       search_options.set("opt:thread_safe", is_thread_safe());
@@ -394,4 +394,4 @@ class pressio_opt_plugin: public libpressio_compressor_plugin {
     }
 };
 
-static pressio_register X(compressor_plugins(), "opt", [](){ return compat::make_unique<pressio_opt_plugin>(); });
+static libpressio::pressio_register X(libpressio::compressor_plugins(), "opt", [](){ return compat::make_unique<pressio_opt_plugin>(); });

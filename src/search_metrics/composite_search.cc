@@ -120,4 +120,4 @@ struct composite_search_metrics : public pressio_search_metrics_plugin {
   std::vector<std::string> search_metrics;
   std::vector<pressio_search_metrics> plugins;
 };
-static pressio_register X(search_metrics_plugins(), "composite_search", [](){ return compat::make_unique<composite_search_metrics>();});
+static libpressio::pressio_register X(search_metrics_plugins(), "composite_search", [](){ return compat::make_unique<composite_search_metrics>();});

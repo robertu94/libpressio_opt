@@ -43,7 +43,7 @@ struct record_search : public pressio_search_metrics_plugin {
 
       //write out results to a file
       auto data = pressio_data::nonowning(
-          pressio_dtype_from_type<value_type>(),
+          libpressio::pressio_dtype_from_type<value_type>(),
           results.data(),
           {iterations, fields}
           );
@@ -63,7 +63,7 @@ struct record_search : public pressio_search_metrics_plugin {
   };
 
   int set_options(pressio_options const& opts) override {
-    get_meta(opts, "record_search:io_format", io_plugins(), io_format, io);
+    get_meta(opts, "record_search:io_format", libpressio::io_plugins(), io_format, io);
     manager.set_options(opts);
     return 0;
   };
@@ -92,11 +92,11 @@ struct record_search : public pressio_search_metrics_plugin {
   std::vector<value_type> results;
   size_t iterations = 0;
   size_t fields = 0;
-  pressio_distributed_manager manager = pressio_distributed_manager(
+  libpressio::distributed::pressio_distributed_manager manager = libpressio::distributed::pressio_distributed_manager(
       /*max_masters*/1,
       /*max_ranks_per_worker*/1
       );
   std::string io_format = "csv";
-  pressio_io io = io_plugins().build("csv");
+  pressio_io io = libpressio::io_plugins().build("csv");
 };
-static pressio_register X(search_metrics_plugins(), "record_search", [](){ return compat::make_unique<record_search>();});
+static libpressio::pressio_register X(search_metrics_plugins(), "record_search", [](){ return compat::make_unique<record_search>();});

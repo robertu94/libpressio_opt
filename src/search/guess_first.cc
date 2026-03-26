@@ -128,4 +128,4 @@ private:
 };
 
 
-static pressio_register guess_first_register(search_plugins(), "guess_first", [](){ return compat::make_unique<guess_first_search>();});
+static libpressio::pressio_register guess_first_register(search_plugins(), "guess_first", [](){ return compat::make_unique<guess_first_search>();});

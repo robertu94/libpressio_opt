@@ -148,4 +148,4 @@ private:
 };
 
 
-static pressio_register binary_search_register(search_plugins(), "binary", [](){ return compat::make_unique<binary_search>();});
+static libpressio::pressio_register binary_search_register(search_plugins(), "binary", [](){ return compat::make_unique<binary_search>();});

@@ -226,13 +226,13 @@ private:
   unsigned int max_seconds = std::numeric_limits<unsigned int>::max();
   unsigned int mode = pressio_search_mode_none;
   compat::optional<unsigned int> seed;
-  pressio_distributed_manager manager = pressio_distributed_manager(
+  libpressio::distributed::pressio_distributed_manager manager = libpressio::distributed::pressio_distributed_manager(
       /*max_masters*/1,
       /*max_ranks_per_worker*/1
       );
   double global_rel_tolerance = .1;
 };
 
-static pressio_register guess_random_register(search_plugins(), "random_search", []() {
+static libpressio::pressio_register guess_random_register(search_plugins(), "random_search", []() {
   return compat::make_unique<random_search>();
 });
