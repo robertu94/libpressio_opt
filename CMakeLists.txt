@@ -16,16 +16,12 @@ include(CTest)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BUILD_SHARED_LIBS "build libraries as shared" ON)
 
-option(LIBPRESSIO_OPT_HAS_DLIB ON)
-
 include(GNUInstallDirs)
 
 find_package(LibPressio REQUIRED)
 find_package(MPI REQUIRED COMPONENTS CXX)
 find_package(LibDistributed REQUIRED)
-if(LIBPRESSIO_OPT_HAS_DLIB)
 find_package(dlib REQUIRED)
-endif()
 find_package(std_compat REQUIRED)
 find_package(PkgConfig)
 find_package(Threads)
@@ -37,6 +33,7 @@ add_library(libpressio_opt
     src/pressio_search_metrics.cc
 
     src/search/binary.cc
+    src/search/fraz.cc
     src/search/guess.cc
     src/search/dist_grid.cc
     src/search/guess_first.cc
@@ -51,12 +48,6 @@ add_library(libpressio_opt
 
   #private headers
   )
-if(LIBPRESSIO_OPT_HAS_DLIB)
-target_sources(libpressio_opt
-      PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/search/fraz.cc
-      )
-endif()
 target_include_directories(
   libpressio_opt
   PUBLIC
@@ -69,10 +60,7 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
   )
 target_link_libraries(libpressio_opt PUBLIC LibDistributed::libdistributed std_compat::std_compat
-  LibPressio::libpressio)
-if(LIBPRESSIO_OPT_HAS_DLIB)
-target_link_libraries(libpressio_opt PRIVATE dlib::dlib )
-endif()
+  LibPressio::libpressio PRIVATE dlib::dlib )
 target_include_directories(libpressio_opt PRIVATE "${LibPressio_DIR}/../../../include") # FIXME
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libpressio_opt_version.h.in
