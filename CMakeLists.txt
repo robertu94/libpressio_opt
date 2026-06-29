@@ -16,6 +16,7 @@ include(CTest)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BUILD_SHARED_LIBS "build libraries as shared" ON)
 
+
 include(GNUInstallDirs)
 
 find_package(LibPressio REQUIRED)
