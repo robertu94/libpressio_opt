@@ -62,6 +62,7 @@ target_include_directories(
   )
 target_link_libraries(libpressio_opt PUBLIC LibDistributed::libdistributed std_compat::std_compat
   LibPressio::libpressio PRIVATE dlib::dlib )
+target_include_directories(libpressio_opt PRIVATE "${LibPressio_DIR}/../../../include") # FIXME
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libpressio_opt_version.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/include/libpressio_opt_version.h

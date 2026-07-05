@@ -286,11 +286,17 @@ private:
     unsigned int mode = pressio_search_mode_none;
     compat::optional<pressio_search_results::output_type::value_type> target;
     double global_rel_tolerance = .1;
-    pressio_distributed_manager manager = pressio_distributed_manager(
-        /*max_ranks_per_worker*/pressio_distributed_manager::unlimited,
+    libpressio::distributed::pressio_distributed_manager manager = libpressio::distributed::pressio_distributed_manager(
+        /*max_ranks_per_worker*/libpressio::distributed::pressio_distributed_manager::unlimited,
         /*max_masters*/1
         );
 };
 
 
-static pressio_register dist_search_register(search_plugins(), "dist_gridsearch", [](){ return compat::make_unique<dist_gridsearch_search>();});
+namespace libpressio {
+    namespace search {
+        namespace dist_grid_ns {
+            libpressio::pressio_register registration(search_plugins(), "dist_gridsearch", [](){ return compat::make_unique<dist_gridsearch_search>();});
+        }
+    }
+}

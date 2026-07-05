@@ -33,4 +33,11 @@ struct noop_search_metric : public pressio_search_metrics_plugin {
   }
 };
 
-static pressio_register X(search_metrics_plugins(), "noop", [](){ return compat::make_unique<noop_search_metric>();});
+
+namespace libpressio {
+    namespace search_metrics {
+        namespace noop_ns {
+            libpressio::pressio_register registration(search_metrics_plugins(), "noop", [](){ return compat::make_unique<noop_search_metric>();});
+        }
+    }
+}

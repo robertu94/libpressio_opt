@@ -15,7 +15,7 @@
 /**
  * base class for search metrics plugins
  */
-struct pressio_search_metrics_plugin : public pressio_configurable{
+struct pressio_search_metrics_plugin : public libpressio::pressio_configurable{
   std::string type() const final {
       return "search_metric";
   }
@@ -127,7 +127,7 @@ struct pressio_search_metrics {
 
 
 /** \returns a reference to the registry singleton */
-pressio_registry<std::shared_ptr<pressio_search_metrics_plugin>>& search_metrics_plugins();
+libpressio::pressio_registry<std::shared_ptr<pressio_search_metrics_plugin>>& search_metrics_plugins();
 
 
 #endif /* end of include guard: PRESSIO_SEARCH_METRICS_H_D0TFAQ8Y */

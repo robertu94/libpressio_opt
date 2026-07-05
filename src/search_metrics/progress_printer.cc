@@ -69,4 +69,11 @@ struct progress_printer : public pressio_search_metrics_plugin {
   std::string rank_str;
 };
 
-static pressio_register X(search_metrics_plugins(), "progress_printer", [](){ return compat::make_unique<progress_printer>();});
+
+namespace libpressio {
+    namespace search_metrics {
+        namespace progress_printer_ns {
+            libpressio::pressio_register registration(search_metrics_plugins(), "progress_printer", [](){ return compat::make_unique<progress_printer>();});
+        }
+    }
+}

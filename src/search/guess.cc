@@ -65,4 +65,10 @@ private:
 };
 
 
-static pressio_register guess_register(search_plugins(), "guess", [](){ return compat::make_unique<guess_search>();});
+namespace libpressio {
+    namespace search {
+        namespace guess_ns {
+            libpressio::pressio_register registration(search_plugins(), "guess", [](){ return compat::make_unique<guess_search>();});
+        }
+    }
+}

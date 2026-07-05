@@ -20,7 +20,7 @@ class pressio_search_exception : public std::runtime_error {
 /**
  * base class for search plugins
  */
-struct pressio_search_plugin : public pressio_versionable, public pressio_configurable  {
+struct pressio_search_plugin : public libpressio::pressio_versionable, public libpressio::pressio_configurable  {
   public:
     std::string type() const final {
         return "search";
@@ -112,4 +112,4 @@ struct pressio_search {
 
 
 /** \returns a reference to the registry singleton */
-pressio_registry<std::shared_ptr<pressio_search_plugin>>& search_plugins();
+libpressio::pressio_registry<std::shared_ptr<pressio_search_plugin>>& search_plugins();

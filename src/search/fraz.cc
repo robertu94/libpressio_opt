@@ -74,7 +74,7 @@ struct fraz_search: public pressio_search_plugin {
       pressio_search_results results;
       dlib::function_evaluation best_result;
       std::map<pressio_search_results::input_type, pressio_search_results::output_type> cache;
-      dlib::thread_pool pool((thread_safe) ? (nthreads): (1));
+      // dlib::thread_pool pool((thread_safe) ? (nthreads): (1));
       std::vector<dlib::function_evaluation> evaluations;
       try{
         evaluations = data_to_evaluations(evaluations_data, lower_bound.size());
@@ -138,7 +138,7 @@ struct fraz_search: public pressio_search_plugin {
 
             if(!skip) {
               best_result = dlib::find_min_global(
-                  pool,
+                  // pool,
                   fraz,
                   vector_to_dlib(lower_bound),
                   vector_to_dlib(upper_bound),
@@ -192,7 +192,7 @@ struct fraz_search: public pressio_search_plugin {
 
             if(!skip) {
               best_result = dlib::find_min_global(
-                  pool,
+                  // pool,
                   fraz,
                   vector_to_dlib(lower_bound),
                   vector_to_dlib(upper_bound),
@@ -232,7 +232,7 @@ struct fraz_search: public pressio_search_plugin {
 
             if(!skip) {
               best_result = dlib::find_max_global(
-                  pool,
+                  // pool,
                   fraz,
                   vector_to_dlib(lower_bound),
                   vector_to_dlib(upper_bound),
@@ -354,4 +354,10 @@ private:
 };
 
 
-static pressio_register fraz_register(search_plugins(), "fraz", [](){ return compat::make_unique<fraz_search>();});
+namespace libpressio {
+    namespace search {
+        namespace fraz_ns {
+            libpressio::pressio_register registration(search_plugins(), "fraz", [](){ return compat::make_unique<fraz_search>();});
+        }
+    }
+}
