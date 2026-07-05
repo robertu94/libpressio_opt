@@ -109,7 +109,7 @@ class pressio_opt_plugin: public libpressio::compressors::libpressio_compressor_
       get(search_options, "opt:do_decompress", &do_decompress);
 
 
-
+      
       return 0;
     }
 
@@ -401,7 +401,7 @@ namespace libpressio {
     namespace search {
         namespace binary_ns { extern pressio_register registration; }
         namespace dist_grid_ns { extern pressio_register registration; }
-        // namespace fraz_ns { extern pressio_register registration; }
+        namespace fraz_ns { extern pressio_register registration; }
         namespace guess_ns { extern pressio_register registration; }
         namespace guess_first_ns { extern pressio_register registration; }
         namespace guess_midpoint_ns { extern pressio_register registration; }
@@ -421,7 +421,7 @@ extern "C" void libpressio_register_libpressio_opt() {
 
     libpressio::search::binary_ns::registration.ensure_registered();
     libpressio::search::dist_grid_ns::registration.ensure_registered();
-    // libpressio::search::fraz_ns::registration.ensure_registered();
+    libpressio::search::fraz_ns::registration.ensure_registered();
     libpressio::search::guess_ns::registration.ensure_registered();
     libpressio::search::guess_first_ns::registration.ensure_registered();
     libpressio::search::guess_midpoint_ns::registration.ensure_registered();
